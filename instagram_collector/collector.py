@@ -161,7 +161,6 @@ def on_callback(self, session):
     except Exception:
         print "Didn't get the access token."
 
-
 @app.route('/realtime_callback')
 def on_realtime_callback(session):
     """
@@ -170,15 +169,15 @@ def on_realtime_callback(session):
     mode = request.GET.get("hub.mode")
     challenge = request.GET.get("hub.challenge")
     verify_token = request.GET.get("ub.verify_token")
-    if challenge:
-        return challenge
-    else:
+    if request.method == 'POST':
         x_hub_signature = request.header.get('X-Hub-Signature')
         raw_response = request.body.read()
         try:
             g.reactor.process(CLIENT_SECRET, raw_response, x_hub_signature)
         except subscriptions.SubscriptionVerifyError as e:
             print "Signature mismatch"
+    elif challenge:
+        return challenge
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1/instagram')
