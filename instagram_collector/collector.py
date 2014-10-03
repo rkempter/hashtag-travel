@@ -34,15 +34,19 @@ LOCATIONS = [
     { 'lat': 48.822493333, 'long': 2.162536078, 'radius': 5000 },
 ]
 
+@app.route('/init')
 def start(self):
     """
     Define callback for geographical post messages. Connect to the instagram api and
     get an access token.
     """
+    g.reactor = subscriptions.SubscriptionsReactor()
+    g.reactor.register_callback(subscriptions.SubscriptionType.GEOGRAPHY, process_geo_location)
     g.unauthenticated_api = client.InstagramAPI(
         client_id=CLIENT_ID, client_secret=CLIENT_SECRET, redirect_uri=REDIRECT_URI
     )
 
+@app.route('/subscribe')
 def subscribe_location():
     """
     Subscribes to all locations and store the subscription id.
@@ -73,7 +77,6 @@ def init_db():
             db.cursor().executescript(f.read())
         db.commit()
 
-@app.post('/realtime_callback')
 def process_geo_location(updates):
     """
     Process a list of updates and add them to subscriptions.
