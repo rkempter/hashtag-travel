@@ -55,9 +55,10 @@ def subscribe_location():
     """
     print "subscribe"
     for location in LOCATIONS:
-        response = g.api.create_subscription(
+        api = client.InstagramAPI(access_token=g.access_token)
+        response = api.create_subscription(
             object='geography', lat=location['lat'], lng=location['long'],
-            radius=1000, aspect='media',
+            radius=location['radius'], aspect='media',
             callback_url=RETURN_URI)
 
         for el in response.data:
@@ -111,8 +112,9 @@ def retrieve_recent_geo(subscription_val):
                         'text') VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
     recent_media = {}
+    api = client.InstagramAPI(access_token=g.access_token)
     while True:
-        new_recent_media, next = g.api.geography_recent_media(id=id, min_id=subscriptions_dict[id]['next'], count=subscription_val['counter'])
+        new_recent_media, next = api.geography_recent_media(id=id, min_id=subscriptions_dict[id]['next'], count=subscription_val['counter'])
         if new_recent_media['pagination']['next_max_id'] > subscription_val['last']:
             break;
         else:
@@ -157,11 +159,11 @@ def on_callback():
     if not code:
         return 'Missing code'
     try:
-        access_token, user_info = g.unauthenticated_api.exchange_code_for_access_token(code)
+        instagram_client = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET, redirect_uri=REDIRECT_URI)
+        access_token, instagram_user = instagram_client.exchange_code_for_access_token(code)
         print "access token= " + access_token
         if not access_token:
-            return 'Could not get access token'
-        g.api = client.InstagramAPI(access_token=access_token)
+            return Response('Could not get access token')
         g.access_token = access_token
 
     except Exception:
