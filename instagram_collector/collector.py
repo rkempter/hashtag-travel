@@ -3,7 +3,6 @@ Author: Renato Kempter, 2014
 Collector for Instagram images containing geo location information.
 """
 from contextlib import closing
-import psycopg2
 import threading
 
 from collections import namedtuple
@@ -182,4 +181,4 @@ def on_realtime_callback(session):
             print "Signature mismatch"
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1')
+    app.run(host='127.0.0.1/instagram')
