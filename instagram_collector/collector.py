@@ -35,7 +35,7 @@ LOCATIONS = [
 ]
 
 @app.route('/init')
-def start(self):
+def start():
     """
     Define callback for geographical post messages. Connect to the instagram api and
     get an access token.
@@ -98,7 +98,7 @@ def process_geo_location(updates):
         finally:
             lock.release()
 
-def retrieve_recent_geo(self, subscription_val):
+def retrieve_recent_geo(subscription_val):
     """
     Do batch retrieval of many instagram medias
     """
@@ -139,7 +139,7 @@ def before_request():
     g.db = connect_db()
 
 @app.teardown_request
-def teardown_request(exception):
+def teardown_request():
     """
     Closing the database connection
     """
@@ -148,7 +148,7 @@ def teardown_request(exception):
         db.close()
 
 @app.route('/redirect')
-def on_callback(self, session):
+def on_callback():
     """
     This gets the access token for the instagram api
     """
@@ -168,7 +168,7 @@ def on_callback(self, session):
         print "Didn't get the access token."
 
 @app.route('/realtime_callback')
-def on_realtime_callback(session):
+def on_realtime_callback():
     """
     When creating a real time subscription, need to return a challenge
     """
@@ -187,4 +187,4 @@ def on_realtime_callback(session):
         return challenge
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8130)
+    app.run(host='0.0.0.0', port=8130)
