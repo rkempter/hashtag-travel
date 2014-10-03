@@ -40,6 +40,7 @@ def start(self):
     Define callback for geographical post messages. Connect to the instagram api and
     get an access token.
     """
+    print "initialize"
     g.reactor = subscriptions.SubscriptionsReactor()
     g.reactor.register_callback(subscriptions.SubscriptionType.GEOGRAPHY, process_geo_location)
     g.unauthenticated_api = client.InstagramAPI(
@@ -51,6 +52,7 @@ def subscribe_location():
     """
     Subscribes to all locations and store the subscription id.
     """
+    print "subscribe"
     for location in LOCATIONS:
         response = g.api.create_subscription(
             object='geography', lat=location['lat'], lng=location['long'],
@@ -150,6 +152,7 @@ def on_callback(self, session):
     """
     This gets the access token for the instagram api
     """
+    print "redirect"
     code = request.GET.get("code")
     if not code:
         return 'Missing code'
@@ -169,6 +172,7 @@ def on_realtime_callback(session):
     """
     When creating a real time subscription, need to return a challenge
     """
+    print "Realtime callback"
     mode = request.GET.get("hub.mode")
     challenge = request.GET.get("hub.challenge")
     verify_token = request.GET.get("ub.verify_token")
@@ -183,4 +187,4 @@ def on_realtime_callback(session):
         return challenge
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1/instagram')
+    app.run(host='127.0.0.1', port=8130)
