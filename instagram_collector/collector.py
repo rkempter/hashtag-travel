@@ -138,12 +138,9 @@ def before_request():
     """
     g.db = connect_db()
 
-@app.teardown_request
-def teardown_request():
-    """
-    Closing the database connection
-    """
-    db = getattr(g, 'db', None)
+@app.teardown_appcontext
+def teardown_db(exception):
+    db = getattr(g, '_database', None)
     if db is not None:
         db.close()
 
