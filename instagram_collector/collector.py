@@ -65,7 +65,7 @@ def connect_db():
     """
     Connect to the local mysql database
     """
-    conn = MySQLdb.connect(user=DB_USER,password=DB_PASSWORD,host=DB_HOST,database=DATABASE)
+    conn = MySQLdb.connect(user=DB_USER, passwd=DB_PASSWORD, db=DATABASE)
     return conn
 
 def init_db():
