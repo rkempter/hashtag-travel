@@ -7,7 +7,7 @@ import threading
 
 from collections import namedtuple
 from instagram import subscriptions, client
-from flask import Flask, request, g
+from flask import Flask, request, g, redirect, Response
 from instagram_collector.config import (CLIENT_SECRET, REDIRECT_URI, CLIENT_ID,
                                         DATABASE, DB_HOST, DB_PASSWORD, DB_USER,
                                         THRESHOLD, RETURN_URI)
@@ -46,6 +46,7 @@ def start():
     g.unauthenticated_api = client.InstagramAPI(
         client_id=CLIENT_ID, client_secret=CLIENT_SECRET, redirect_uri=REDIRECT_URI
     )
+    return redirect(g.unauthenticated_api.get_authorize_url(scope=['basic']))
 
 @app.route('/subscribe')
 def subscribe_location():
@@ -62,6 +63,8 @@ def subscribe_location():
         for el in response.data:
             if 'subscription' in el['type']:
                 subscriptions_dict[el['object_id']] = {'counter': 0}
+
+    return Response('Subscribed')
 
 def connect_db():
     """
@@ -181,7 +184,9 @@ def on_realtime_callback():
         except subscriptions.SubscriptionVerifyError as e:
             print "Signature mismatch"
     elif challenge:
-        return challenge
+        return Response(challenge)
+
+    return Response('Parsed instagram')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8130)
