@@ -153,7 +153,7 @@ def on_callback():
     This gets the access token for the instagram api
     """
     print "redirect"
-    code = request.GET.get("code")
+    code = request.values.get("code")
     if not code:
         return 'Missing code'
     try:
@@ -173,12 +173,12 @@ def on_realtime_callback():
     When creating a real time subscription, need to return a challenge
     """
     print "Realtime callback"
-    mode = request.GET.get("hub.mode")
-    challenge = request.GET.get("hub.challenge")
-    verify_token = request.GET.get("ub.verify_token")
+    mode = request.values.get("hub.mode")
+    challenge = request.values.get("hub.challenge")
+    verify_token = request.values.get("ub.verify_token")
     if request.method == 'POST':
-        x_hub_signature = request.header.get('X-Hub-Signature')
-        raw_response = request.body.read()
+        x_hub_signature = request.headers.get('X-Hub-Signature')
+        raw_response = request.data
         try:
             g.reactor.process(CLIENT_SECRET, raw_response, x_hub_signature)
         except subscriptions.SubscriptionVerifyError as e:
