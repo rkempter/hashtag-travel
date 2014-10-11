@@ -82,7 +82,7 @@ def process_geo_location(update):
     Process a list of updates and add them to subscriptions.
     """
     logging.getLogger(__name__).info("Processing an instagram update")
-    insert_query = """INSERT IGNORE INTO media_events (`id`
+    insert_query = """INSERT IGNORE INTO media_events (`id`,
         `user_name`, `user_id`, `tags`, `location_name`,
         `location_lat`, `location_lng`, `filter`,
         `created_time`, `image_url`, `media_url`,
@@ -103,7 +103,7 @@ def process_geo_location(update):
                            (tag_format(media_el.tags) if hasattr(media_el, 'tags') else ""),
                            (media_el.location.name if hasattr(media_el.location, 'name') else ""),
                             media_el.location.point.latitude, media_el.location.point.longitude,
-                            media_el.filter, media_el.created_time,
+                            media_el.filter, media_el.created_time.strftime("%Y-%m-%d %H:%M:%S"),
                             media_el.get_standard_resolution_url(),
                             media_el.link,
                             (media_el.caption if hasattr(media_el, 'caption') else "")), medias)
