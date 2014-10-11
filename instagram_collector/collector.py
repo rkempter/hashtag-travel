@@ -83,9 +83,10 @@ def process_geo_location(update):
     """
     logging.getLogger(__name__).info("Processing an instagram update")
     insert_query = """INSERT IGNORE INTO media_events (
-                        'user_name', 'user_id', 'tags', 'location_name', 'location_lat',
-                        'location_lng', 'filter', 'created_time', 'image_url', 'media_url',
-                        'text') VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        `user_name`, `user_id`, `tags`, `location_name`,
+        `location_lat`, `location_lng`, `filter`,
+        `created_time`, `image_url`, `media_url`,
+        `text`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
     api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 
@@ -99,7 +100,9 @@ def process_geo_location(update):
                             media_el.location.point.latitude, media_el.location.point.longitude,
                             media_el.filter, media_el.created_time,
                             media_el.get_standard_resolution_url(),
-                            media_el.link, media_el.caption), medias)
+                            media_el.link,
+                            (media_el.caption if hasattr(media_el, 'caption') else "")), medias)
+
     logging.getLogger(__name__).info(media_tuples)
     db = connect_db()
     try:
