@@ -86,7 +86,7 @@ def process_geo_location(update):
         `user_name`, `user_id`, `tags`, `location_name`,
         `location_lat`, `location_lng`, `filter`,
         `created_time`, `image_url`, `media_url`,
-        `text`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        `text`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
     api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 
