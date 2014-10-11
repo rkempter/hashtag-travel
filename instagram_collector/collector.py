@@ -93,9 +93,14 @@ def process_geo_location(update):
     geo_id = update['object_id']
     medias, next = api.geography_recent_media(geography_id=geo_id, count=15)
 
+    def tag_format(tags):
+        """ Format tag for database """
+        tags = ",".join(map(lambda tag: tag.name, tags))
+        return tags
+
     logging.getLogger(__name__).info("Processing object with location data")
     media_tuples = map(lambda media_el: (media_el.user.username, media_el.user.id,
-                           (media_el.tags if hasattr(media_el, 'tags') else ""),
+                           (tag_format(media_el.tags) if hasattr(media_el, 'tags') else ""),
                            (media_el.location.name if hasattr(media_el.location, 'name') else ""),
                             media_el.location.point.latitude, media_el.location.point.longitude,
                             media_el.filter, media_el.created_time,
