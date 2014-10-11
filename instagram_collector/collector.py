@@ -7,7 +7,7 @@ import multiprocessing
 import logging
 
 from collections import namedtuple
-from instagram import subscriptions, client, media
+from instagram import subscriptions, client
 from flask import Flask, request, g, redirect, Response
 from instagram_collector.config import (CLIENT_SECRET, REDIRECT_URI, CLIENT_ID,
                                         DATABASE, DB_HOST, DB_PASSWORD, DB_USER,
@@ -79,6 +79,7 @@ def process_geo_location(update):
     """
     Process a list of updates and add them to subscriptions.
     """
+    print
     insert_query = """INSERT IGNORE INTO media_events (
                         'user_name', 'user_id', 'tags', 'location_name', 'location_lat',
                         'location_lng', 'filter', 'created_time', 'image_url', 'media_url',
@@ -92,7 +93,7 @@ def process_geo_location(update):
     insert_media.append(media_el)
 
     insert_media_formatted = map(lambda x: (
-            x.user.username, x.user.id, x.tags, x.location.name,
+            x.user.username, x.user.id, (x.tags if 'tags' in x else ""), x.location.name,
             x.location.point.latitude, x.location.point.longitude, x.filter, x.created_time,
             x.get_standard_resolution_url(), x.link, x.caption), insert_media)
 
@@ -140,7 +141,7 @@ def on_callback():
     return Response("ok")
 
 
-@app.route('/realtime_callback')
+@app.route('/realtime_callback', methods=["GET", "POST"])
 def on_realtime_callback():
     """
     When creating a real time subscription, need to return a challenge
