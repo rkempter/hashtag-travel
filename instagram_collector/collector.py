@@ -100,14 +100,15 @@ def process_geo_location(update):
                             media_el.filter, media_el.created_time,
                             media_el.get_standard_resolution_url(),
                             media_el.link, media_el.caption), medias)
-
+    logging.getLogger(__name__).info(media_tuples)
     db = connect_db()
     try:
         cursor = db.cursor()
         cursor.executemany(insert_query, media_tuples)
         db.commit()
     except Exception as e:
-        logging.getLogger(__name__).error("Database error: " + e)
+        logging.getLogger(__name__).error("Database error: ")
+        logging.getLogger(__name__).error(e)
     finally:
         db.close()
 
