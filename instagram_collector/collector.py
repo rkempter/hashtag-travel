@@ -82,7 +82,7 @@ def process_geo_location(update):
     Process a list of updates and add them to subscriptions.
     """
     logging.getLogger(__name__).info("Processing an instagram update")
-    insert_query = """INSERT IGNORE INTO media_events (
+    insert_query = """INSERT IGNORE INTO media_events (`id`
         `user_name`, `user_id`, `tags`, `location_name`,
         `location_lat`, `location_lng`, `filter`,
         `created_time`, `image_url`, `media_url`,
@@ -91,7 +91,7 @@ def process_geo_location(update):
     api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 
     geo_id = update['object_id']
-    medias, next = api.geography_recent_media(geography_id=geo_id, count=15)
+    medias, next = api.geography_recent_media(geography_id=geo_id, count=1)
 
     def tag_format(tags):
         """ Format tag for database """
@@ -99,7 +99,7 @@ def process_geo_location(update):
         return tags
 
     logging.getLogger(__name__).info("Processing object with location data")
-    media_tuples = map(lambda media_el: (media_el.user.username, media_el.user.id,
+    media_tuples = map(lambda media_el: (media_el.id, media_el.user.username, media_el.user.id,
                            (tag_format(media_el.tags) if hasattr(media_el, 'tags') else ""),
                            (media_el.location.name if hasattr(media_el.location, 'name') else ""),
                             media_el.location.point.latitude, media_el.location.point.longitude,
