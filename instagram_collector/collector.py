@@ -107,6 +107,7 @@ def process_geo_location(update):
         cursor.executemany(insert_query, media_tuples)
         db.commit()
     except Exception as e:
+        logging.getLogger(__name__).error(cursor._last_executed)
         logging.getLogger(__name__).error("Database error: ")
         logging.getLogger(__name__).error(e)
     finally:
