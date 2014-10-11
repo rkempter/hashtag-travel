@@ -87,19 +87,23 @@ def process_geo_location(update):
                         'text') VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
     api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
-    db = connect_db()
+
     media_id = update['object_id']
     media_el = api.media(media_id=media_id)
-    print media_el
+    if hasattr(media_el, 'location'):
+        media_tuple = (media_el.user.username, media_el.user.id,
+                       (media_el.tags if hasattr(media_el, 'tags') else ""),
+                       (media_el.location.name if hasattr(media_el.location, 'name') else ""),
+                        media_el.location.point.latitude, media_el.location.point.longitude,
+                        media_el.filter, media_el.created_time,
+                        media_el.get_standard_resolution_url(),
+                        media_el.link, media_el.caption)
 
-    media_tuple = (media_el.user.username, media_el.user.id, (media_el.tags if 'tags' in media_el else ""), media_el.location.name,
-            media_el.location.point.latitude, media_el.location.point.longitude, media_el.filter, media_el.created_time,
-            media_el.get_standard_resolution_url(), media_el.link, media_el.caption)
-
-    cursor = db.cursor()
-    cursor.executemany(insert_query, media_tuple)
-    db.commit()
-    db.close()
+        db = connect_db()
+        cursor = db.cursor()
+        cursor.executemany(insert_query, media_tuple)
+        db.commit()
+        db.close()
 
 @app.before_request
 def before_request():
