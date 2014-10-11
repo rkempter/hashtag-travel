@@ -7,26 +7,17 @@ import multiprocessing
 import logging
 
 from collections import namedtuple
-from instagram import subscriptions, client
+from instagram import subscriptions, client, media
 from flask import Flask, request, g, redirect, Response
 from instagram_collector.config import (CLIENT_SECRET, REDIRECT_URI, CLIENT_ID,
                                         DATABASE, DB_HOST, DB_PASSWORD, DB_USER,
                                         THRESHOLD, RETURN_URI, ACCESS_TOKEN)
-import MySQLdb
 
-# The subscription_counter takes care of memorizing the 'next' and 'last' id of
-# collected medias
-subscriptions_dict = {}
+import MySQLdb
 
 # The web application
 app = Flask(__name__)
 
-# The shared dictionary
-manager = multiprocessing.Manager()
-shared_dict = manager.dict()
-
-# The queue of tasks with pull information
-queue = multiprocessing.Queue()
 
 # The geographical locations that we want to subscribe to
 LOCATIONS = [
@@ -37,42 +28,36 @@ LOCATIONS = [
     { 'lat': 48.822493333, 'long': 2.162536078, 'radius': 5000 },
 ]
 
-def queue_handling():
-    """
-    Handles new objects that arrive in the queue
-    """
-    pass
-
-@app.route('/init')
 def start():
     """
     Define callback for geographical post messages. Connect to the instagram api and
     get an access token.
     """
-    g.reactor = subscriptions.SubscriptionsReactor()
-    g.reactor.register_callback(subscriptions.SubscriptionType.GEOGRAPHY, process_geo_location)
-    g.unauthenticated_api = client.InstagramAPI(
+    unauthenticated_api = client.InstagramAPI(
         client_id=CLIENT_ID, client_secret=CLIENT_SECRET, redirect_uri=REDIRECT_URI
     )
-    return redirect(g.unauthenticated_api.get_authorize_url(scope=['basic']))
+    return redirect(unauthenticated_api.get_authorize_url(scope=['basic']))
 
-@app.route('/subscribe')
 def subscribe_location():
     """
-    Subscribes to all locations and store the subscription id.
+    Subscribes to all locations.
     """
     api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
     for location in LOCATIONS:
-        response = api.create_subscription(
-            object='geography', lat=location['lat'], lng=location['long'],
-            radius=location['radius'], aspect='media',
-            callback_url=RETURN_URI)
-        print response
-        for el in response.data:
-            if 'subscription' in el['type']:
-                subscriptions_dict[el['object_id']] = {'counter': 0}
+        api.create_subscription(
+            object='geography',
+            lat=location['lat'], lng=location['long'], radius=location['radius'],
+            aspect='media',
+            callback_url='http://grpupc1.epfl.ch/instagram/realtime_callback')
 
-    return Response('Subscribed')
+def unsubscribe_locations():
+    """
+    Unsubscribe from all locations
+    """
+    api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+    subscriptions = api.list_subscriptions()
+    for subscription in map(lambda x: x['id'], subscriptions['data']):
+        api.delete_subscriptions(id=subscription)
 
 def connect_db():
     """
@@ -90,84 +75,31 @@ def init_db():
             db.cursor().execute(f.read())
         db.commit()
 
-def process_geo_location(updates):
+def process_geo_location(update):
     """
     Process a list of updates and add them to subscriptions.
-    @Todo: This can be done using multiprocessing as well.
-    """
-    print updates
-    #for update in updates:
-    #    subscription_id = update['subscription_id']
-    #    subscription_val = subscriptions_dict[subscription_id]
-    #    lock.acquire()
-    #    try:
-    #        if 'next' not in subscription_val:
-    #            subscription_val['next'] = update['object_id']
-    #        subscription_val['last'] = update['object_id']
-    #        subscription_val['counter'] += 1
-    #        if subscription_val['counter'] > THRESHOLD:
-    #            retrieve_recent_geo(subscription_val)
-    #    finally:
-    #        lock.release()
-
-@app.route('/list')
-def list():
-    """
-    List all current subscriptions
-    """
-    api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
-    subscriptions = api.list_subscriptions()
-
-    return Response("You have the following subscriptions: " + subscriptions)
-
-@app.route('/unsubscribe')
-def unsubscribe():
-    """
-    Unsubscribe from all subscriptions
-    """
-    api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
-    try:
-        subscriptions = api.list_subscriptions()
-        for subscription in subscriptions:
-            api.delete_subscriptions(id=subscription)
-    except Exception as error:
-        print error
-
-    return Response("Unsubscribed from all subscriptions")
-
-def retrieve_recent_geo(subscription_val):
-    """
-    Do batch retrieval of many different instagram medias
     """
     insert_query = """INSERT IGNORE INTO media_events (
                         'user_name', 'user_id', 'tags', 'location_name', 'location_lat',
                         'location_lng', 'filter', 'created_time', 'image_url', 'media_url',
                         'text') VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
-    recent_media = {}
-    api = client.InstagramAPI(access_token=ACCESS_TOKEN)
-    while True:
-        new_recent_media, next = api.geography_recent_media(id=id, min_id=subscriptions_dict[id]['next'], count=subscription_val['counter'])
-        if new_recent_media['pagination']['next_max_id'] > subscription_val['last']:
-            break;
-        else:
-            recent_media.update(new_recent_media)
+    insert_media = []
+    api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+    db = connect_db()
+    media_id = update['object_id']
+    media_el = api.media(media_id=media_id)
+    insert_media.append(media_el)
 
-        subscription_val['next'] = next
-        subscription_val['counter'] = 0
+    insert_media_formatted = map(lambda x: (
+            x.user.username, x.user.id, x.tags, x.location.name,
+            x.location.point.latitude, x.location.point.longitude, x.filter, x.created_time,
+            x.get_standard_resolution_url(), x.link, x.caption), insert_media)
 
-        insert_media = map(lambda x: (
-            x['caption']['from'], x['caption']['id'], x['tags'], x['location']['name'],
-            x['location']['latitude'], x['location']['longitude'], x['filter'], x['created_time'],
-            x['images']['standart_resolution'], x['link'], x['caption']['text']), recent_media)
-
-        db = getattr(g, 'db', None)
-        if db:
-            cursor = db.cursor()
-            cursor.executemany(insert_query, insert_media)
-            db.commit()
-        else:
-            raise Exception("The database is not defined.")
+    cursor = db.cursor()
+    cursor.executemany(insert_query, insert_media_formatted)
+    db.commit()
+    db.close()
 
 @app.before_request
 def before_request():
@@ -205,26 +137,30 @@ def on_callback():
         logging.getLogger(__name__).error(e)
         return Response("Didn't get the access token.")
 
-    return Response("Fine.")
+    return Response("ok")
+
 
 @app.route('/realtime_callback')
 def on_realtime_callback():
     """
     When creating a real time subscription, need to return a challenge
     """
-    print "Realtime callback"
-    mode = request.values.get("hub.mode")
-    challenge = request.values.get("hub.challenge")
-    verify_token = request.values.get("ub.verify_token")
-    if request.method == 'POST':
+    print request
+    mode = request.values.get('hub.mode')
+    challenge = request.values.get('hub.challenge')
+    verify_token = request.values.get('hub.verify_token')
+    if challenge:
+        return Response(challenge)
+    else:
+        reactor = subscriptions.SubscriptionsReactor()
+        reactor.register_callback(subscriptions.SubscriptionType.GEOGRAPHY, process_geo_location)
+
         x_hub_signature = request.headers.get('X-Hub-Signature')
         raw_response = request.data
         try:
-            g.reactor.process(CLIENT_SECRET, raw_response, x_hub_signature)
-        except subscriptions.SubscriptionVerifyError as e:
-            print "Signature mismatch"
-    elif challenge:
-        return Response(challenge)
+            reactor.process(CLIENT_SECRET, raw_response, x_hub_signature)
+        except subscriptions.SubscriptionVerifyError:
+            logging.error('Instagram signature mismatch')
 
     return Response('Parsed instagram')
 
