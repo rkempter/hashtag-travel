@@ -15,6 +15,8 @@ from instagram_collector.config import (CLIENT_SECRET, REDIRECT_URI, CLIENT_ID,
 
 import MySQLdb
 
+logging.basicConfig(filename='example.log',level=logging.DEBUG)
+
 # The web application
 app = Flask(__name__)
 
@@ -79,8 +81,7 @@ def process_geo_location(update):
     """
     Process a list of updates and add them to subscriptions.
     """
-    print "processing"
-    print update
+    logging.getLogger(__name__).info("Processing an instagram update")
     insert_query = """INSERT IGNORE INTO media_events (
                         'user_name', 'user_id', 'tags', 'location_name', 'location_lat',
                         'location_lng', 'filter', 'created_time', 'image_url', 'media_url',
@@ -88,37 +89,26 @@ def process_geo_location(update):
 
     api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 
-    media_id = update['object_id']
-    media_el = api.media(media_id=media_id)
-    if hasattr(media_el, 'location'):
-        media_tuple = (media_el.user.username, media_el.user.id,
-                       (media_el.tags if hasattr(media_el, 'tags') else ""),
-                       (media_el.location.name if hasattr(media_el.location, 'name') else ""),
-                        media_el.location.point.latitude, media_el.location.point.longitude,
-                        media_el.filter, media_el.created_time,
-                        media_el.get_standard_resolution_url(),
-                        media_el.link, media_el.caption)
+    geo_id = update['object_id']
+    medias, next = api.geography_recent_media(geography_id=geo_id, count=15)
 
-        db = connect_db()
+    logging.getLogger(__name__).info("Processing object with location data")
+    media_tuples = map(lambda media_el: (media_el.user.username, media_el.user.id,
+                           (media_el.tags if hasattr(media_el, 'tags') else ""),
+                           (media_el.location.name if hasattr(media_el.location, 'name') else ""),
+                            media_el.location.point.latitude, media_el.location.point.longitude,
+                            media_el.filter, media_el.created_time,
+                            media_el.get_standard_resolution_url(),
+                            media_el.link, media_el.caption), medias)
+
+    db = connect_db()
+    try:
         cursor = db.cursor()
-        cursor.executemany(insert_query, media_tuple)
+        cursor.executemany(insert_query, media_tuples)
         db.commit()
-        db.close()
-
-@app.before_request
-def before_request():
-    """
-    Connect to the database
-    """
-    g._database = connect_db()
-
-@app.teardown_appcontext
-def teardown_db(exception):
-    """
-    Teardown the database after a request
-    """
-    db = getattr(g, '_database', None)
-    if db is not None:
+    except Exception as e:
+        logging.getLogger(__name__).error("Database error: " + e)
+    finally:
         db.close()
 
 @app.route('/redirect')
