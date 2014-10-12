@@ -97,9 +97,7 @@ def process_geo_location(update):
                               access_token=ACCESS_TOKEN)
 
     geo_id = update['object_id']
-    medias, next = api.geography_recent_media(geography_id=geo_id, count=1)
-
-    print
+    medias, next = api.geography_recent_media(geography_id=geo_id, count=5)
 
     def tag_format(tags):
         """ Format tag for database """
