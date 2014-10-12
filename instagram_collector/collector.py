@@ -88,7 +88,7 @@ def process_geo_location(update):
         `created_time`, `image_url`, `media_url`,
         `text`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
-    api = client.InstagramAPI(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+    api = client.InstagramAPI(access_token=ACCESS_TOKEN)
 
     geo_id = update['object_id']
     medias, next = api.geography_recent_media(geography_id=geo_id, count=1)
