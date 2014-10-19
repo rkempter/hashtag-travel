@@ -11,7 +11,7 @@ from instagram import subscriptions, client
 from flask import Flask, request, g, redirect, Response
 from instagram_collector.config import (CLIENT_SECRET, REDIRECT_URI, CLIENT_ID,
                                         DATABASE, DB_HOST, DB_PASSWORD, DB_USER,
-                                        THRESHOLD, RETURN_URI, ACCESS_TOKEN)
+                                        THRESHOLD, RETURN_URI, ACCESS_TOKEN, DB_PORT)
 
 import MySQLdb
 
@@ -70,7 +70,8 @@ def connect_db():
     """
     Connect to the local mysql database
     """
-    conn = MySQLdb.connect(user=DB_USER, passwd=DB_PASSWORD, db=DATABASE)
+    conn = MySQLdb.connect(
+        user=DB_USER, passwd=DB_PASSWORD, db=DATABASE, host=DB_HOST, port=DB_PORT)
     return conn
 
 def init_db():
