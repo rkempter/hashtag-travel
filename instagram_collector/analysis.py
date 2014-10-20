@@ -2,9 +2,17 @@
 Analysis.py contains methods that allow the computation of statistics in the instagram and
 foursquare data set.
 """
+import datetime
+import logging
 
 import pandas as pd
 import numpy as np
+
+# Configure logging
+logging.basicConfig(
+    filename='instagram_logs.log',level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 def load_data(csv_file_path):
     """
@@ -37,18 +45,32 @@ def compute_post_frequency(df):
     Compute the frequency of posting a new picture for each user
     """
     def _frequency(group):
-        if len(group) < 2:
-            return 0
-
         group.sort(ascending=True)
         frequency = 0
+        logging.getLogger(__name__).info("Group length: %d" % len(group))
+        values = group.values
+        print values
         for index in range(1, len(group)):
-            frequency += group[index] - group[index-1]
+            frequency = values[index] - values[(index-1)]
 
-        return frequency
+        return float(frequency) / (len(group) - 1)
 
     grouped = df.groupby('user_id')
     return grouped['timestamp'].apply(_frequency)
+
+def filter_users(df, low_threshold, high_threshold):
+    """
+    Filtering users that have less posts than low_threshold as well as users that have more posts
+    than high_treshold
+    :param df - dataframe
+    :param low_threshold - only users with count(posts) > low_threshold
+    :param high_treshold - only users with count(posts) < high_threshold
+    """
+
+    return df.groupby('user_id').filter(
+        lambda x: True if x['timestamp'].count() < high_threshold \
+                       and x['timestamp'].count() > low_threshold \
+                       else False).groupby('user_id')
 
 def compute_number_places(df):
     """
@@ -56,17 +78,28 @@ def compute_number_places(df):
     """
     pass
 
-def compute_average_visit_count(df):
+def compute_average_visit_count(df, low_threshold = 0, high_threshold = 1000):
     """
     Compute the median and average of visits at unique places for all users
+    :return median, mean
     """
-    pass
+    users_df = filter_users(df, low_threshold, high_threshold)
+    place_count = compute_number_places(users_df)
+    median = place_count.median()
+    mean = place_count.mean()
 
-def compute_average_trip_length(df):
+    return median, mean
+
+def compute_average_trip_length(df, low_threshold = 0, high_threshold = 1000):
     """
-    Compute the median and average trip length for all users
+    Compute the median and mean trip length for all users
     """
-    pass
+    users_df = filter_users(df, low_threshold, high_threshold)
+    trip_length = compute_trip_length(users_df)
+    median = trip_length.median()
+    mean = trip_length.mean()
+
+    return median, mean
 
 def get_user_count(df):
     """
@@ -78,7 +111,7 @@ def get_place_count(df):
     """
     Return the number of unique places in the dataset
     """
-    pass
+    return len(np.unique(df['venue_id'].values))
 
 def get_adjacent_user_matrix(df):
     """
