@@ -1,6 +1,7 @@
-"""
-For all locations retrieved from Instagram, get detailed venue information.
-"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# For all locations retrieved from Instagram, get detailed venue information.
+
 from collections import defaultdict
 
 import foursquare as fq
@@ -48,9 +49,17 @@ insert_foreign_key = """
     SET `venue_id` = %s
     WHERE
         `location_name` = %s AND
-        `location_lat` = %s AND
-        `location_lng` = %s;
+        `location_lat` LIKE %s AND
+        `location_lng` LIKE %s;
 """
+
+def to_unicode_or_bust(obj, encoding='utf-8'):
+    """ Decode to unicode as soon as possible """
+    if isinstance(obj, basestring):
+        if not isinstance(obj, unicode):
+            obj = unicode(obj, encoding)
+
+    return obj
 
 def retrieve_venue_map(conn):
     """
@@ -115,11 +124,11 @@ def map_venue(data):
 
     venue = dict()
     venue['id'] = data['id']
-    venue['name'] = data['name']
-    venue['address'] = ",".join(data['location']['formattedAddress'])
+    venue['name'] = to_unicode_or_bust(data['name'])
+    venue['address'] = to_unicode_or_bust(",".join(data['location']['formattedAddress']))
     venue['lat'] = data['location']['lat']
     venue['lng'] = data['location']['lng']
-    venue['category_name'] = _get_category(data['categories'])
+    venue['category_name'] = to_unicode_or_bust(_get_category(data['categories']))
     venue['url'] = data['canonicalUrl']
     venue['stat_checkin'] = data['stats']['checkinsCount'] if hasattr(data, 'stats') else '0'
     venue['stat_user'] = data['stats']['usersCount'] if hasattr(data, 'stats') else '0'
@@ -131,7 +140,7 @@ def map_venue(data):
     venue['stat_rating_count'] = data['ratingSignals'] if hasattr(data, 'ratingSignals') else '0'
     venue['stat_photo_count'] = data['photos']['count']
     venue['stat_listed'] = data['listed']['count']
-    venue['tags'] = ",".join(data['tags'])
+    venue['tags'] = to_unicode_or_bust(",".join(data['tags']))
     venue['price'] = _get_price_tier(data['attributes'])
 
     # id, name, lat, lng, address, url, category_name,
@@ -155,6 +164,8 @@ def get_foursquare_data(conn, venue_map, locations):
     venues = []
     location_venue_map = []
 
+    cursor = conn.cursor()
+
     for location in locations:
         try:
             data = foursquare_api.venues.search(params={
@@ -167,16 +178,21 @@ def get_foursquare_data(conn, venue_map, locations):
                 if venues_data[0]['id'] not in venue_map:
                     venue = foursquare_api.venues(venues_data[0]['id'])
                     filtered_data = map_venue(venue['venue'])
-                    venues.append(filtered_data)
+                    cursor.execute(insert_venue_sql, filtered_data)
+                    conn.commit()
+                    #venues.append(filtered_data)
 
-                location_venue_map.append(
-                    (venues_data[0]['id'], location[0].strip(), location[1], location[2])
-                )
+                #location_venue_map.append(
+                cursor.execute(insert_foreign_key, (venues_data[0]['id'], location[0].strip(),
+                                                    location[1], location[2]))
+                conn.commit()
             else:
                 logging.getLogger(__name__).debug(
                     "Place with name %s has not been found" % location[0].strip()
                 )
-                location_venue_map.append((0, location[0].strip(), location[1], location[2]))
+                cursor.execute(insert_foreign_key, (0, location[0].strip(), location[1], location[2]))
+                conn.commit()
+                #location_venue_map.append((0, location[0].strip(), location[1], location[2]))
         except fq.RateLimitExceeded:
             logging.getLogger(__name__).error("Rate Limit Exceeded!")
             break;
@@ -184,15 +200,14 @@ def get_foursquare_data(conn, venue_map, locations):
             logging.getLogger(__name__).error("Error while logging in.")
             break;
 
-    cursor = conn.cursor()
-
     # Add all venues to the database
-    cursor.executemany(insert_venue_sql, venues)
-    conn.commit()
+    #cursor.executemany(insert_venue_sql, venues)
+    #conn.commit()
 
     # Update all foreign keys
-    cursor.executemany(insert_foreign_key, location_venue_map)
-    conn.commit()
+    #print location_venue_map
+    #cursor.executemany(insert_foreign_key, location_venue_map)
+    #conn.commit()
 
 def execute():
     # create connection

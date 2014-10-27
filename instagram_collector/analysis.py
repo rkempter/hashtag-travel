@@ -8,11 +8,30 @@ import logging
 import pandas as pd
 import numpy as np
 
+from collections import defaultdict
+
+import networkx as nx
+
 # Configure logging
 logging.basicConfig(
     filename='instagram_logs.log',level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+class Venue(object):
+    """
+    Venue represents a location.
+    :param name - location name
+    :param lng - longitude
+    :param lat - latitude
+    """
+    def __init__(self, name, lng, lat):
+        self.name = name
+        self.lng = lng
+        self.lat = lat
+
+    def __str__(self):
+        return "%s,%f,%f" % (self.name, self.lng, self.lat)
 
 def load_data(csv_file_path):
     """
@@ -72,6 +91,17 @@ def filter_users(df, low_threshold, high_threshold):
                        and x['timestamp'].count() > low_threshold \
                        else False).groupby('user_id')
 
+def get_hashtag_frequency(df):
+    """
+    Extract all hashtags and count the frequency.
+    """
+    hashtags_list = defaultdict(int)
+    for tags in df[df.tags.notnull()]['tags']:
+        for tag in tags.split(','):
+            hashtags_list[tag] += 1
+
+    return hashtags_list
+
 def compute_number_places(df):
     """
     Compute for each user the number of places he has visited
@@ -117,10 +147,34 @@ def get_adjacent_user_matrix(df):
     """
     Return the adjacent matrix for each each user mapping the user - user relations
     """
-    pass
 
 def get_adjacent_place_matrix(df):
     """
     Return the adjacent matrix for each lace place mapping.
     """
-    pass
+    user_group = df.groupby('user_id')
+    user_venue = user_group['venue_id']
+
+    adj_list = defaultdict(int)
+
+    for group in user_venue:
+        df_1 = pd.DataFrame(group)
+        df_2 = pd.DataFrame(group)
+        df_1[0] = df_2[0] = 0
+        merged = pd.merge(df_1, df_2, on=0)
+        merged = merged[merged['venue_id_x'] != merged['venue_id_y']]
+        for edge in merged[['venue_id_x', 'venue_id_y']].values:
+            adj_list[(edge[0], edge[1])] += 1
+
+    return adj_list
+
+def create_graph(adj_list):
+    """
+    Create a graph g based on an adjacent list
+    """
+    G = nx.Graph()
+
+    for edge, weight in adj_list:
+        G.add_edge(edge[0], edge[1], weight)
+
+    return G
