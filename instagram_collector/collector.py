@@ -11,7 +11,8 @@ from instagram import subscriptions, client
 from flask import Flask, request, g, redirect, Response
 from instagram_collector.config import (CLIENT_SECRET, REDIRECT_URI, CLIENT_ID,
                                         DATABASE, DB_HOST, DB_PASSWORD, DB_USER,
-                                        THRESHOLD, RETURN_URI, ACCESS_TOKEN, DB_PORT)
+                                        THRESHOLD, RETURN_URI, ACCESS_TOKEN, DB_PORT,
+                                        POSTGRES_HOST)
 
 import MySQLdb
 
@@ -28,6 +29,7 @@ app = Flask(__name__)
 
 # The geographical locations that we want to subscribe to
 LOCATIONS = [
+    { 'lat': 48.8824999, 'long': 2.3140151, 'radius': 5000 },
     { 'lat': 48.916889692, 'long': 2.344497138, 'radius': 5000 },
     { 'lat': 48.883487422, 'long': 2.232917243, 'radius': 5000 },
     { 'lat': 48.857065773, 'long': 2.355140143, 'radius': 5000 },
@@ -72,6 +74,18 @@ def connect_db():
     """
     conn = MySQLdb.connect(
         user=DB_USER, passwd=DB_PASSWORD, db=DATABASE, host=DB_HOST, port=DB_PORT, charset="utf8")
+    return conn
+
+def connect_postgres_db():
+    import psycopg2
+    """
+    Connect to the local postgres database
+    """
+    conn = psycopg2.connect(
+        database=DATABASE, user=DB_USER,
+        password=DB_PASSWORD, host=POSTGRES_HOST,
+        port=DB_PORT)
+
     return conn
 
 def init_db():
