@@ -8,7 +8,7 @@ This modules handles the topic generation and assignes topics to clusters
 import json
 import os
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 from instagram_collector.collector import connect_postgres_db
 from gensim import corpora, models
 
@@ -51,6 +51,7 @@ def clean_tags(conn, query):
 
     return documents
 
+
 def generate_topics(documents, store_path, nbr_topics=100):
     """
     Takes a number of documents and generates nbr_topics topics. For persistency, the model
@@ -71,6 +72,7 @@ def generate_topics(documents, store_path, nbr_topics=100):
     dictionary.save(os.path.join(store_path, "dictionary.dict"))
     topic_model.save(os.path.join(store_path, "model.lda"))
 
+
 def load_model(store_path):
     """
     Loads a model from disk
@@ -78,6 +80,7 @@ def load_model(store_path):
     :return: gensim.models.LdaModel
     """
     return models.LdaModel.load(os.path.join(store_path, "model.lda"))
+
 
 def load_dictionary(store_path):
     """
@@ -87,6 +90,7 @@ def load_dictionary(store_path):
     """
     return corpora.Dictionary.load(os.path.join(store_path, "dictionary.dict"))
 
+
 def load_tfidf_model(store_path):
     """
     Loads a tfidf model
@@ -94,6 +98,7 @@ def load_tfidf_model(store_path):
     :return: gensim.models.TfidfModel
     """
     return models.TfidfModel.load(os.path.join(store_path, "model.tfidf"))
+
 
 def get_topics(lda_model, documents):
     """
@@ -115,7 +120,7 @@ def get_topics(lda_model, documents):
     # normalize
     total = sum(topic_distribution.values())
 
-    return {key:(val / total) for key,val in topic_distribution}
+    return {key: (val / total) for key, val in topic_distribution}
 
 
 def get_cluster_topic_distribution(conn, store_path):
@@ -147,9 +152,10 @@ def get_cluster_topic_distribution(conn, store_path):
 
     for name, group in grouped:
         corpus = [dictionary.doc2bow(document) for document in group.str.split(',').values]
-        cluster_topic_distribution[name] = get_topics(lda_model, corpus)
+        cluster_topic_distribution[name] = get_topics(lda_model, tfidf_model[corpus])
 
-    return json.dump(cluster_topic_distribution)
+    return json.dumps(cluster_topic_distribution)
+
 
 def get_topic_names(store_path, threshold=0.05, topic_number=100):
     """
@@ -170,7 +176,7 @@ def get_topic_names(store_path, threshold=0.05, topic_number=100):
         if names:
             topic_names[topic_index] = names
 
-    return json.dump(topic_names)
+    return json.dumps(topic_names)
 
 
 if __name__ == '__main__':
@@ -178,11 +184,12 @@ if __name__ == '__main__':
         SELECT tags
         FROM media_events
         WHERE tags != '';"""
-    conn = connect_postgres_db()
-    store_path = "/home/rkempter/"
+    connection = connect_postgres_db()
+    storage_path = "/home/rkempter/"
 
-    training_documents = clean_tags(conn, start_query)
-    generate_topics(training_documents, store_path)
+    training_documents = clean_tags(connection, start_query)
+    generate_topics(training_documents, storage_path)
 
-    cluster_distribution = get_cluster_topic_distribution(conn, store_path)
-    topic_names = get_topic_names(store_path)
+    cluster_distribution = get_cluster_topic_distribution(connection, storage_path)
+    topics = get_topic_names(storage_path)
+
