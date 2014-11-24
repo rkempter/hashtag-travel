@@ -134,7 +134,7 @@ def get_topics(lda_model, documents):
 
     logging.info("Done generating the topics for documents")
 
-    return {key: (val / total) for key, val in topic_distribution}
+    return {key: (val / total) for key, val in topic_distribution.items()}
 
 
 def get_cluster_topic_distribution(conn, store_path):
