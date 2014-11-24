@@ -180,7 +180,7 @@ def get_topic_names(store_path, threshold=0.05, topic_number=100):
     :return:
     """
     logging.info("Retrieve topic names")
-    lda_model = load_dictionary(store_path)
+    lda_model = load_model(store_path)
 
     topic_names = {}
 
@@ -202,9 +202,10 @@ if __name__ == '__main__':
     connection = connect_postgres_db()
     storage_path = "/home/rkempter/"
 
-    training_documents = clean_tags(connection, start_query)
-    generate_topics(training_documents, storage_path)
+    #training_documents = clean_tags(connection, start_query)
+    #generate_topics(training_documents, storage_path)
 
     cluster_distribution = get_cluster_topic_distribution(connection, storage_path)
     topics = get_topic_names(storage_path)
-
+    print cluster_distribution
+    print topics
