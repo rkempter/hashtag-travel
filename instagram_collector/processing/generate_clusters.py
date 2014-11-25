@@ -2,7 +2,7 @@
 This module handles the processing of clusters
 """
 import json
-
+import pandas as pd
 
 from instagram_collector.collector import connect_postgres_db
 from shapely.wkt import dumps, loads
@@ -139,14 +139,14 @@ def generate_cluster_json(conn):
     """
     media_query = """
         SELECT
-            m.cluster_id,
-            c.name,
-            ST_AsText(c.center),
-            c.radius,
-            m.id,
-            m.image_url,
-            m.location_lat,
-            m.location_lng
+            m.cluster_id AS cluster_id,
+            c.name AS cluster_name,
+            ST_AsText(c.center) AS center,
+            c.radius AS radius,
+            m.id AS id,
+            m.image_url AS image_url,
+            m.location_lat AS lat,
+            m.location_lng AS lng
         FROM
             (SELECT
                 id,
@@ -161,32 +161,39 @@ def generate_cluster_json(conn):
             m.cluster_id IS NOT NULL AND
             m.pos < 10;"""
 
-    cursor = conn.cursor()
 
-    cursor.execute(media_query)
-    media_result = cursor.fetchall()
+    geo_json = {
+        "type": "FeatureCollection",
+        "features": []
+    }
+    df_result = pd.read_sql(media_query, conn)
+    grouped_cluster = df_result.groupby([
+        'cluster_id', 'cluster_name', 'center', 'radius'
+    ])
 
-    cluster = {}
+    for name, group in grouped_cluster:
+        cluster_id, cluster_name, center, radius = name
+        center = loads(center)
+        group_values = group[['id', 'image_url', 'lat', 'lng']].values
 
-    for cluster_id, cluster_name, center, radius, id, image_url, lat, lng \
-            in media_result:
+        geo_json.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [center.y, center.x],
+                },
+                "properties": {
+                    "id": cluster_id,
+                    "name": cluster_name,
+                    "radius": radius,
+                #    "media": [{"id": media[0],
+                #               "image_url": media[1],
+                #               "lat": media[2],
+                #               "lng": media[3]} for media in group_values],
+                }
+            })
 
-        if cluster_id not in cluster:
-            center = loads(center)
-            cluster[cluster_id] = {
-                "center": {"lat": float(center.y), "lng": float(center.x)},
-                "name": cluster_name,
-                "radius": radius,
-                "media": []
-            }
-
-        #cluster[cluster_id]['media'].append({
-        #    "id": id,
-        #    "url": image_url,
-        #    "coordinates": {"lat": float(lat), "lng": float(lng)},
-        #})
-
-    return json.dumps(cluster)
+    return json.dumps(geo_json)
 
 if __name__ == '__main__':
     connection = connect_postgres_db()
