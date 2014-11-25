@@ -181,7 +181,8 @@ def generate_cluster_json(conn):
                 "type": "Feature",
                 "geometry": {
                     "type": "Point",
-                    "coordinates": [center.y, center.x],
+                    # lon, lat
+                    "coordinates": [center.x, center.y],
                 },
                 "properties": {
                     "id": cluster_id,
