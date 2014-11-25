@@ -180,11 +180,11 @@ def generate_cluster_json(conn):
                 "media": []
             }
 
-        cluster[cluster_id]['media'].append({
-            "id": id,
-            "url": image_url,
-            "coordinates": {"lat": float(lat), "lng": float(lng)},
-        })
+        #cluster[cluster_id]['media'].append({
+        #    "id": id,
+        #    "url": image_url,
+        #    "coordinates": {"lat": float(lat), "lng": float(lng)},
+        #})
 
     return json.dumps(cluster)
 
