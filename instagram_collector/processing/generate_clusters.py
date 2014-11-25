@@ -3,8 +3,9 @@ This module handles the processing of clusters
 """
 import json
 
-from shapely.wkt import dumps, loads
 
+from instagram_collector.collector import connect_postgres_db
+from shapely.wkt import dumps, loads
 from shapely.geometry import Point, Polygon
 
 def great_circle_distance(pnt1, pnt2, radius=6371000):
@@ -178,3 +179,7 @@ def generate_cluster_json(conn):
         })
 
     return json.dumps(cluster)
+
+if __name__ == '__main__':
+    connection = connect_postgres_db()
+    print generate_cluster_json(connection)
