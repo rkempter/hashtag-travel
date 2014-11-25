@@ -2,6 +2,7 @@
 This module handles the processing of clusters
 """
 import json
+import numpy as np
 import pandas as pd
 
 from instagram_collector.collector import connect_postgres_db
@@ -176,7 +177,7 @@ def generate_cluster_json(conn):
         center = loads(center)
         group_values = group[['id', 'image_url', 'lat', 'lng']].values
 
-        geo_json.append({
+        geo_json['features'].append({
                 "type": "Feature",
                 "geometry": {
                     "type": "Point",
