@@ -227,7 +227,7 @@ if __name__ == '__main__':
 
     # call paris database in mongo db
     mongo_db = client.paris_db
-
+    mongo_db.topic_collection.remove({})
     #training_documents = clean_tags(connection, start_query)
     #generate_topics(training_documents, storage_path)
 
