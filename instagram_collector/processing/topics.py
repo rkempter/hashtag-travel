@@ -157,7 +157,7 @@ def get_topics(lda_model, documents):
 
     logging.info("Done generating the topics for documents")
 
-    return {key: (val / total) for key, val in topic_distribution.items()}
+    return {"%d" % key: (val / total) for key, val in topic_distribution.items()}
 
 
 def write_mongodb_distribution(conn, store_path, cluster_collection):
