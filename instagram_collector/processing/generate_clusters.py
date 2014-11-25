@@ -148,10 +148,18 @@ def generate_cluster_json(conn):
             m.location_lat,
             m.location_lng
         FROM
-            media_events AS m, cluster AS c
+            (SELECT
+                id,
+                cluster_id,
+                image_url,
+                location_lat,
+                location_lng,
+                ROW_NUMBER() OVER (PARTITION BY cluster_id ORDER BY RANDOM()) AS pos
+            FROM media_events) AS m, cluster AS c
         WHERE
             m.cluster_id = c.id AND
-            m.cluster_id IS NOT NULL;"""
+            m.cluster_id IS NOT NULL AND
+            m.pos < 10;"""
 
     cursor = conn.cursor()
 
