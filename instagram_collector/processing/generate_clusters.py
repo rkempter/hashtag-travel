@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from instagram_collector.collector import connect_postgres_db
+from pymongo import MongoClient
 from shapely.wkt import dumps, loads
 from shapely.geometry import Point, Polygon
 
@@ -131,7 +132,7 @@ def update_cluster(conn):
     conn.commit()
 
 
-def generate_cluster_json(conn):
+def write_cluster_mongodb(conn, cluster_collection):
     """
     Generates a json of the clusters with information about the contained instagrams
 
@@ -162,41 +163,40 @@ def generate_cluster_json(conn):
             m.cluster_id IS NOT NULL AND
             m.pos < 10;"""
 
-
-    geo_json = {
-        "type": "FeatureCollection",
-        "features": []
-    }
     df_result = pd.read_sql(media_query, conn)
     grouped_cluster = df_result.groupby([
         'cluster_id', 'cluster_name', 'center', 'radius'
     ])
+
+    clusters = []
 
     for name, group in grouped_cluster:
         cluster_id, cluster_name, center, radius = name
         center = loads(center)
         group_values = group[['id', 'image_url', 'lat', 'lng']].values
 
-        geo_json['features'].append({
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    # lon, lat
-                    "coordinates": [center.x, center.y],
-                },
-                "properties": {
-                    "id": cluster_id,
-                    "name": cluster_name,
-                    "radius": radius,
-                #    "media": [{"id": media[0],
-                #               "image_url": media[1],
-                #               "lat": media[2],
-                #               "lng": media[3]} for media in group_values],
-                }
-            })
+        clusters.append({
+            "_id": cluster_id,
+            "coordinates": [center.x, center.y],
+            "name": cluster_name,
+            "radius": radius,
+            "media": [{"id": media[0],
+                       "image_url": media[1],
+                       "lat": media[2],
+                       "lng": media[3]} for media in group_values]
+        })
 
-    return json.dumps(geo_json)
+    return cluster_collection.insert(clusters)
+
 
 if __name__ == '__main__':
+    client = MongoClient('localhost', 27017)
+
+    # call paris database in mongo db
+    mongo_db = client.paris_db
+    # connect to postgres server
     connection = connect_postgres_db()
-    print generate_cluster_json(connection)
+    # Remove all documents from the cluster collection
+    mongo_db.cluster_collection.remove({})
+    # write the clusters to mongodb
+    write_cluster_mongodb(connection, mongo_db.cluster_collection)

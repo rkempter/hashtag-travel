@@ -12,6 +12,7 @@ import os
 from collections import defaultdict, Counter
 from instagram_collector.collector import connect_postgres_db
 from gensim import corpora, models
+from pymongo import MongoClient
 
 import pandas as pd
 
@@ -81,6 +82,28 @@ def generate_topics(documents, store_path, nbr_topics=100):
     topic_model.save(os.path.join(store_path, "model.lda"))
     logging.info("Done generating topics")
 
+
+def write_mongo_topics(topic_collection, store_path, threshold=0.05, topic_number=100):
+    topics = []
+
+    lda_model = load_model(store_path)
+    for topic_index in range(0, topic_number):
+        topic_words = lda_model.show_topic(topic_index)
+        names = [word for probability, word in topic_words if probability > threshold]
+
+        if not names:
+            names = [topic_words[0]]
+
+        topics.append({
+            "_id": topic_index,
+            "words": topic_words,
+            "names": names,
+            "clusters": []
+        })
+
+    return topic_collection.insert(topics)
+
+
 def load_model(store_path):
     """
     Loads a model from disk
@@ -137,7 +160,7 @@ def get_topics(lda_model, documents):
     return {key: (val / total) for key, val in topic_distribution.items()}
 
 
-def get_cluster_topic_distribution(conn, store_path):
+def write_mongodb_distribution(conn, store_path, cluster_collection):
     """
     Compute the distribution of topics in the clusters
     :param conn:
@@ -158,17 +181,15 @@ def get_cluster_topic_distribution(conn, store_path):
 
     grouped = df_tags.groupby('cluster_id')['tags']
 
-    cluster_topic_distribution = {}
-
     lda_model = load_model(store_path)
     dictionary = load_dictionary(store_path)
     tfidf_model = load_model(store_path)
 
     for name, group in grouped:
+        cluster = cluster_collection.find_one({"_id": name})
         corpus = [dictionary.doc2bow(document) for document in group.str.split(',').values]
-        cluster_topic_distribution[name] = get_topics(lda_model, tfidf_model[corpus])
-
-    return json.dumps(cluster_topic_distribution)
+        cluster["distribution"] = get_topics(lda_model, tfidf_model[corpus])
+        cluster_collection.update({"_id": name}, {"$set": cluster}, upsert=False)
 
 
 def get_topic_names(store_path, threshold=0.05, topic_number=100):
@@ -202,10 +223,13 @@ if __name__ == '__main__':
     connection = connect_postgres_db()
     storage_path = "/home/rkempter/"
 
+    client = MongoClient('localhost', 27017)
+
+    # call paris database in mongo db
+    mongo_db = client.paris_db
+
     #training_documents = clean_tags(connection, start_query)
     #generate_topics(training_documents, storage_path)
 
-    cluster_distribution = get_cluster_topic_distribution(connection, storage_path)
-    topics = get_topic_names(storage_path)
-    print cluster_distribution
-    print topics
+    write_mongo_topics(mongo_db.topic_collection, storage_path)
+    write_mongodb_distribution(connection, storage_path, mongo_db.cluster_collection)
