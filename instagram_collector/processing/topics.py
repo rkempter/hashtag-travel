@@ -188,7 +188,7 @@ def write_mongodb_distribution(conn, store_path, cluster_collection):
     for name, group in grouped:
         corpus = [dictionary.doc2bow(document) for document in group.str.split(',').values]
         distribution = get_topics(lda_model, tfidf_model[corpus])
-        cluster_collection.update({"_id": "%d" % name},
+        cluster_collection.update({"_id": name},
                                   {"$set": {"distribution": distribution}},
                                   upsert=False)
 
