@@ -8,13 +8,14 @@ This modules handles the topic generation and assignes topics to clusters
 import json
 import logging
 import os
+import pandas as pd
 
 from collections import defaultdict, Counter
 from instagram_collector.collector import connect_postgres_db
 from gensim import corpora, models
 from pymongo import MongoClient
 
-import pandas as pd
+from .config import TOPIC_NBR
 
 logging.basicConfig(
     filename='topic_logs.log',level=logging.DEBUG,
@@ -63,7 +64,7 @@ def clean_tags(conn, query):
     return documents
 
 
-def generate_topics(documents, store_path, nbr_topics=100, tfidf_on=False):
+def generate_topics(documents, store_path, nbr_topics=TOPIC_NBR, tfidf_on=False):
     """
     Takes a number of documents and generates nbr_topics topics. For persistency, the model
     can be saved to disc
@@ -86,7 +87,7 @@ def generate_topics(documents, store_path, nbr_topics=100, tfidf_on=False):
     logging.info("Done generating topics")
 
 
-def write_mongo_topics(topic_collection, store_path, threshold=0.05, topic_number=100):
+def write_mongo_topics(topic_collection, store_path, threshold=0.05, topic_number=TOPIC_NBR):
     topics = []
 
     lda_model = load_model(store_path)
@@ -196,7 +197,7 @@ def write_mongodb_distribution(conn, store_path, cluster_collection):
                                   upsert=False)
 
 
-def get_topic_names(store_path, threshold=0.05, topic_number=100):
+def get_topic_names(store_path, threshold=0.05, topic_number=TOPIC_NBR):
     """
     Get the tags that stand for a topic. Only use tags that have higher confidence than threshold
     :param store_path: Path were models and dictionaries are stored

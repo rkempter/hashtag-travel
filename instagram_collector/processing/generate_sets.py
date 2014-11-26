@@ -4,15 +4,15 @@ Module that implements different sets to compute accuracy
 import logging
 import pandas as pd
 
-from bson.objectid import ObjectId
 from collections import Counter
 from instagram_collector.collector import connect_postgres_db
 from operator import itemgetter
 from pymongo import MongoClient
 from pymongo.bulk import BulkWriteError
 
+from .config import LOCATION_CLUSTER_NBR, TOPIC_NBR
 
-def kmeans_feature_matrix(cluster_collection, topic_nbr=100):
+def kmeans_feature_matrix(cluster_collection, topic_nbr=TOPIC_NBR):
     """
     Generate feature matrix for kmeans clustering (preparation step)
     :param cluster_collection:
@@ -37,7 +37,8 @@ def kmeans_feature_matrix(cluster_collection, topic_nbr=100):
 
     return features, doc_mapping
 
-def kmeans_cluster_locations(features, location_map, cluster_nbr, max_iter=300, n_init=10, init="k-means++"):
+def kmeans_cluster_locations(features, location_map, cluster_nbr=LOCATION_CLUSTER_NBR,
+                             max_iter=300, n_init=10, init="k-means++"):
     """
 
     :param features:
@@ -175,7 +176,7 @@ if __name__ == '__main__':
 
     features, doc_mapping = kmeans_feature_matrix(mongo_db.cluster_collection)
     # @Todo: find correct number of clusters (generate print)
-    sets = kmeans_cluster_locations(features, doc_mapping, 100)
+    sets = kmeans_cluster_locations(features, doc_mapping, LOCATION_CLUSTER_NBR)
     mongo_db.centroid_collection.remove({})
     write_kmeans_centorid(mongo_db.centroid_collection, mongo_db.cluster_collection, sets)
 
