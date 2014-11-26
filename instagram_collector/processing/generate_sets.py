@@ -3,7 +3,6 @@ Module that implements different sets to compute accuracy
 """
 import logging
 import pandas as pd
-import pymongo
 
 from collections import Counter
 from instagram_collector.collector import connect_postgres_db
@@ -22,7 +21,7 @@ def kmeans_feature_matrix(cluster_collection, topic_nbr=100):
     from scipy.sparse import dok_matrix
 
     nbr_location = cluster_collection.count()
-    features = dok_matrix((nbr_location,topic_nbr), dtype=float)
+    features = dok_matrix((nbr_location, topic_nbr), dtype=float)
 
     documents = cluster_collection.find({}, {'distribution': 1})
     doc_mapping = map(lambda doc: doc["_id"], documents)
@@ -75,8 +74,7 @@ def update_kmeans_cluster(cluster_collection, locations, centroid_id):
     :return:
     """
     bulk = cluster_collection.initialize_unordered_bulk_op()
-    bulk.find({"_id": { $in: locations } })
-        .update({ $set: { "centroid": centroid_id } })
+    bulk.find({"_id": {"$in": locations}}).update({"$set": {"centroid": centroid_id}})
     try:
         bulk.execute()
     except BulkWriteError as bwe:
@@ -151,7 +149,7 @@ def compute_kmeans_accuracy(cluster_collection, df_users):
 
         centroids = map(lambda location: location['centroid'],
                         cluster_collection.find({
-                            "_id": { $in: locations} }, {"_id": 0, "centroid": 1})
+                            "_id": {"$in": locations}}, {"_id": 0, "centroid": 1})
         )
 
         intersection_count = Counter(centroid for centroid in centroids)
@@ -164,7 +162,7 @@ def compute_kmeans_accuracy(cluster_collection, df_users):
 
     logging.getLogger(__name__).info("Accuracy is %f" % (in_set / total))
 
-    return (in_set / total)
+    return in_set / total
 
 
 if __name__ == '__main__':
