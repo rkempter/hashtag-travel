@@ -38,7 +38,7 @@ def clean_tags(conn, query):
     docs = df_hashtags['tags'].str.split(',').values
 
     # flatten the list
-    hashtags_flat = [tag for subtags in docs for tag in subtags if tag != '']
+    hashtags_flat = [tag for subtags in docs for tag in subtags if tag != '' and len(tag) > 3]
 
     # Count all hashtags with
     hashtags_count = Counter(tag for tag in hashtags_flat)
@@ -57,11 +57,13 @@ def clean_tags(conn, query):
         if new_doc:
             documents.append(new_doc)
 
+    logging.info("Number of unique hashtags: %d" % len(filtered_hashtag_all))
+    logging.info("Mean of hashtags per document: %f" % float(sum(map(lambda x: len(x), documents))) / len(documents))
     logging.info("Done with cleaning the tags")
     return documents
 
 
-def generate_topics(documents, store_path, nbr_topics=100):
+def generate_topics(documents, store_path, nbr_topics=100, tfidf_on=False):
     """
     Takes a number of documents and generates nbr_topics topics. For persistency, the model
     can be saved to disc
@@ -74,9 +76,10 @@ def generate_topics(documents, store_path, nbr_topics=100):
     corpus = [dictionary.doc2bow(document) for document in documents]
 
     # Generate a tf idf model
-    tfidf = models.TfidfModel(corpus)
-    corpus_tfidf = tfidf[corpus]
-    topic_model = models.LdaModel(corpus_tfidf, id2word=dictionary, num_topics=nbr_topics)
+    if tfidf_on:
+        tfidf = models.TfidfModel(corpus)
+        corpus = tfidf[corpus]
+    topic_model = models.LdaModel(corpus, id2word=dictionary, num_topics=nbr_topics)
 
     dictionary.save(os.path.join(store_path, "dictionary.dict"))
     topic_model.save(os.path.join(store_path, "model.lda"))
