@@ -43,7 +43,7 @@ def kmeans_cluster_locations(features, location_map, cluster_nbr, max_iter=300, 
     from sklearn.cluster import k_means
 
     centroids, labels, inertia = k_means(
-        features, cluster_nbr,
+        features.tocsc(), cluster_nbr,
         init=init, max_iter=max_iter,
         n_init=n_init
     )
