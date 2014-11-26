@@ -58,7 +58,7 @@ def clean_tags(conn, query):
             documents.append(new_doc)
 
     logging.info("Number of unique hashtags: %d" % len(filtered_hashtag_all))
-    logging.info("Mean of hashtags per document: %f" % float(sum(map(lambda x: len(x), documents))) / len(documents))
+    #logging.info("Mean of hashtags per document: %f" % float(sum(map(lambda x: len(x), documents))) / len(documents))
     logging.info("Done with cleaning the tags")
     return documents
 
@@ -232,8 +232,8 @@ if __name__ == '__main__':
     # call paris database in mongo db
     mongo_db = client.paris_db
     mongo_db.topic_collection.remove({})
-    #training_documents = clean_tags(connection, start_query)
-    #generate_topics(training_documents, storage_path)
+    training_documents = clean_tags(connection, start_query)
+    generate_topics(training_documents, storage_path)
 
     write_mongo_topics(mongo_db.topic_collection, storage_path)
     write_mongodb_distribution(connection, storage_path, mongo_db.cluster_collection)

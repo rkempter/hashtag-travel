@@ -4,6 +4,7 @@ Module that implements different sets to compute accuracy
 import logging
 import pandas as pd
 
+from bson.objectid import ObjectId
 from collections import Counter
 from instagram_collector.collector import connect_postgres_db
 from operator import itemgetter
@@ -24,11 +25,15 @@ def kmeans_feature_matrix(cluster_collection, topic_nbr=100):
     features = dok_matrix((nbr_location, topic_nbr), dtype=float)
 
     documents = cluster_collection.find({}, {'distribution': 1})
-    doc_mapping = map(lambda doc: doc["_id"], documents)
+    doc_mapping = []
 
     for index, document in enumerate(documents):
-        for topic_id, value in document["distribution"]:
-            features[index, topic_id] = value
+        doc_mapping.append(document["_id"])
+        if "distribution" not in document:
+            continue
+
+        for topic_id, value in document["distribution"].items():
+            features[index, int(topic_id)] = float(value)
 
     return features, doc_mapping
 
@@ -41,29 +46,26 @@ def kmeans_cluster_locations(features, location_map, cluster_nbr, max_iter=300, 
     """
 
     from sklearn.cluster import k_means
-
+    feature_csc = features.tocsr()
     centroids, labels, inertia = k_means(
-        features.tocsc(), cluster_nbr,
-        init=init, max_iter=max_iter,
-        n_init=n_init
+        feature_csc, cluster_nbr,init=init, max_iter=max_iter,n_init=n_init
     )
-
-    sets = []
+    sets = {}
     for index in range(0, len(labels)):
         location_index = location_map[index]
         centroid_index = labels[index]
 
         if centroid_index not in sets.keys():
             centroid = centroids[centroid_index]
-            sets.append({
-                "_id": centroid_index,
-                "centroid": centroid,
+            sets[centroid_index] = {
+                "_id": str(centroid_index),
+                "centroid": centroid.tolist(),
                 "locations": [],
-            })
+            }
 
         sets[centroid_index]['locations'].append(location_index)
 
-    return sets
+    return sets.values()
 
 def update_kmeans_cluster(cluster_collection, locations, centroid_id):
     """
@@ -89,7 +91,6 @@ def write_kmeans_centorid(centroid_collection, cluster_collection, sets):
     :param sets:
     :return:
     """
-
     centroid_collection.insert(sets)
 
     for set in sets:
@@ -149,9 +150,11 @@ def compute_kmeans_accuracy(cluster_collection, df_users):
 
         centroids = map(lambda location: location['centroid'],
                         cluster_collection.find({
-                            "_id": {"$in": locations}}, {"_id": 0, "centroid": 1})
+                            "_id": {"$in": list(locations)}}, {"_id": 0, "centroid": 1})
         )
-
+        # @todo ckeck why required
+        if not centroids:
+            continue
         intersection_count = Counter(centroid for centroid in centroids)
         max_arg = max(intersection_count.iteritems(), key=itemgetter(1))[0]
 
@@ -173,6 +176,7 @@ if __name__ == '__main__':
     features, doc_mapping = kmeans_feature_matrix(mongo_db.cluster_collection)
     # @Todo: find correct number of clusters (generate print)
     sets = kmeans_cluster_locations(features, doc_mapping, 100)
+    mongo_db.centroid_collection.remove({})
     write_kmeans_centorid(mongo_db.centroid_collection, mongo_db.cluster_collection, sets)
 
     # evaluation of accuracy
