@@ -92,7 +92,7 @@ def write_mongo_topics(topic_collection, store_path, threshold=0.05, topic_numbe
         names = [word for probability, word in topic_words if probability > threshold]
 
         if not names:
-            names = [topic_words[0]]
+            names = [topic_words[0][1]]
 
         topics.append({
             "_id": topic_index,
