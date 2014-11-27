@@ -109,24 +109,27 @@ def generate_user_set(conn):
 
     query = """
         WITH valid_user_id AS (
-            SELECT user_id, cluster_id
+            SELECT m.user_id, m.cluster_id
             FROM
-                media_events
+                media_events AS m, cluster AS c
             WHERE
-                cluster_id IS NOT NULL
+                cluster_id IS NOT NULL AND
+                m.cluster_id = c.id
             GROUP BY
-                user_id, cluster_id
-            HAVING COUNT(id) > 1
+                m.user_id, m.cluster_id
+            HAVING COUNT(m.id) > 1
         )
 
         SELECT DISTINCT
             m.user_id, m.cluster_id
         FROM
             media_events AS m,
-            valid_user_id AS v
+            valid_user_id AS v,
+            cluster AS c
         WHERE
             m.user_id = v.user_id AND
-            m.cluster_id IS NOT NULL;"""
+            m.cluster_id IS NOT NULL AND
+            m.cluster_id = c.id;"""
 
     return pd.read_sql(query, conn)
 
