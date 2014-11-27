@@ -154,9 +154,6 @@ def compute_accuracy(cluster_collection, df_users):
                         cluster_collection.find({
                             "_id": {"$in": list(locations)}}, {"_id": 0, "centroid": 1})
         )
-        # @todo ckeck why required
-        if not centroids:
-            continue
         intersection_count = Counter(centroid for centroid in centroids)
         max_arg = max(intersection_count.iteritems(), key=itemgetter(1))[0]
 
@@ -180,11 +177,11 @@ def generate_connectivity(conn, location_map):
 
     df_cluster = pd.read_sql("""
     SELECT
-        user_id, cluster_id
+        m.user_id, m.cluster_id
     FROM
-        media_events
+        media_events AS m, cluster AS c
     WHERE
-        cluster_id IS NOT NULL;
+        cluster_id IS NOT NULL AND m.cluster_id = c.id;
     """, conn)
 
     df_edge = pd.merge(df_cluster, df_cluster, left_on='user_id', right_on='user_id')
