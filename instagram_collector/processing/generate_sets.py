@@ -192,12 +192,14 @@ def generate_connectivity(conn, location_map):
     all_edge = df_edge[['cluster_id_x', 'cluster_id_y']].values
     all_edge_tuple = [(edge[0], edge[1]) for edge in all_edge]
 
-    inverse_map = {key:val for key,val in enumerate(location_map)}
-
+    inverse_map = {val:key for key,val in enumerate(location_map)}
+    
     graph = nx.Graph()
 
     for edge in all_edge_tuple:
         start, end = edge
+        if start not in inverse_map or end not in inverse_map:
+            continue
         graph.add_edge(inverse_map[start], inverse_map[end])
 
     return nx.to_scipy_sparse_matrix(graph)
@@ -209,7 +211,7 @@ def get_agglomerative_clustering(cluster_nbr, features, location_map, connectivi
     """
     from sklearn.cluster import AgglomerativeClustering
 
-    agglo_clustering = AgglomerativeClustering(cluster_nbr, connectivity, "euclidian")
+    agglo_clustering = AgglomerativeClustering(cluster_nbr, connectivity=connectivity)
     labels = agglo_clustering.fit_predict(features)
     sets = {}
 
