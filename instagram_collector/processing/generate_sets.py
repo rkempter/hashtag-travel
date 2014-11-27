@@ -13,7 +13,8 @@ from pymongo.bulk import BulkWriteError
 
 from .config import LOCATION_CLUSTER_NBR, TOPIC_NBR
 
-def kmeans_feature_matrix(cluster_collection, topic_nbr=TOPIC_NBR):
+
+def get_feature_matrix(cluster_collection, topic_nbr=TOPIC_NBR):
     """
     Generate feature matrix for kmeans clustering (preparation step)
     :param cluster_collection:
@@ -85,7 +86,7 @@ def update_cluster(cluster_collection, locations, centroid_id):
         logging.getLogger(__name__).error(bwe)
 
 
-def write_centorid(centroid_collection, cluster_collection, sets):
+def write_centroid(centroid_collection, cluster_collection, sets):
     """
 
     :param centroid_collection:
@@ -234,14 +235,14 @@ if __name__ == '__main__':
     client = MongoClient('localhost', 27017)
     mongo_db = client.paris_db
 
-    features, doc_mapping = kmeans_feature_matrix(mongo_db.cluster_collection)
+    features, doc_mapping = get_feature_matrix(mongo_db.cluster_collection)
     # @Todo: find correct number of clusters (generate print)
     connectivity = generate_connectivity(connection, doc_mapping)
     sets = get_agglomerative_clustering(40, features, doc_mapping, connectivity)
 
 #    sets = kmeans_cluster_locations(features, doc_mapping, LOCATION_CLUSTER_NBR)
     mongo_db.centroid_collection.remove({})
-    write_centorid(mongo_db.centroid_collection, mongo_db.cluster_collection, sets)
+    write_centroid(mongo_db.centroid_collection, mongo_db.cluster_collection, sets)
 
     # evaluation of accuracy
     df_users = generate_user_set(connection)
