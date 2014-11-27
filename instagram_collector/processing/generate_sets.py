@@ -96,7 +96,7 @@ def write_centorid(centroid_collection, cluster_collection, sets):
     centroid_collection.insert(sets)
 
     for set in sets:
-        update_kmeans_cluster(cluster_collection, set['locations'], set['_id'])
+        update_cluster(cluster_collection, set['locations'], set['_id'])
 
 
 def generate_user_set(conn):
@@ -189,7 +189,7 @@ def generate_connectivity(conn, location_map):
 
     df_edge = pd.merge(df_cluster, df_cluster, left_on='user_id', right_on='user_id')
 
-    all_edge = np.unique(df_edge[['cluster_id_x', 'cluster_id_y']].values)
+    all_edge = df_edge[['cluster_id_x', 'cluster_id_y']].values
     all_edge_tuple = set([(edge[0], edge[1]) for edge in all_edge])
 
     inverse_map = {val:key for key,val in enumerate(location_map)}
@@ -198,8 +198,6 @@ def generate_connectivity(conn, location_map):
 
     for edge in all_edge_tuple:
         start, end = edge
-        if start not in inverse_map or end not in inverse_map:
-            continue
         graph.add_edge(inverse_map[start], inverse_map[end])
 
     return nx.to_scipy_sparse_matrix(graph)
