@@ -68,7 +68,7 @@ def kmeans_cluster_locations(features, location_map, cluster_nbr=LOCATION_CLUSTE
 
     return sets.values()
 
-def update_kmeans_cluster(cluster_collection, locations, centroid_id):
+def update_cluster(cluster_collection, locations, centroid_id):
     """
     Write kmeans centroid id to the cluster collection
     :param cluster_collection:
@@ -84,7 +84,7 @@ def update_kmeans_cluster(cluster_collection, locations, centroid_id):
         logging.getLogger(__name__).error(bwe)
 
 
-def write_kmeans_centorid(centroid_collection, cluster_collection, sets):
+def write_centorid(centroid_collection, cluster_collection, sets):
     """
 
     :param centroid_collection:
@@ -130,7 +130,7 @@ def generate_user_set(conn):
     return pd.read_sql(query, conn)
 
 
-def compute_kmeans_accuracy(cluster_collection, df_users):
+def compute_accuracy(cluster_collection, df_users):
     """
     Computation of the accuracy of predicting the set of places a person moves around.
     The max number (> 1) of instagrams that falls into the same cluster is counted for the accuracy
@@ -168,6 +168,64 @@ def compute_kmeans_accuracy(cluster_collection, df_users):
 
     return in_set / total
 
+def generate_connectivity(conn, location_map):
+    """
+    Generates the connectivity map between different clusters
+    :param location_map: a mapping from cluster ids to a range(0, cluster_nbr)
+    :return:
+    """
+
+    import networkx as nx
+
+    df_cluster = pd.read_sql("""
+    SELECT
+        user_id, cluster_id
+    FROM
+        media_events
+    WHERE
+        cluster_id IS NOT NULL;
+    """, conn)
+
+    df_edge = pd.merge(df_cluster, df_cluster, left_on='user_id', right_on='user_id')
+    df_edge = df_edge[df_edge['cluster_id_x'] != df_edge['cluster_id_y']]
+
+    all_edge = df_edge[['cluster_id_x', 'cluster_id_y']].values
+    all_edge_tuple = [(edge[0], edge[1]) for edge in all_edge]
+
+    inverse_map = {key:val for key,val in enumerate(location_map)}
+
+    graph = nx.Graph()
+
+    for edge in all_edge_tuple:
+        start, end = edge
+        graph.add_edge(inverse_map[start], inverse_map[end])
+
+    return nx.to_scipy_sparse_matrix(graph)
+
+def get_agglomerative_clustering(cluster_nbr, features, location_map, connectivity):
+    """
+
+    :return:
+    """
+    from sklearn.cluster import AgglomerativeClustering
+
+    agglo_clustering = AgglomerativeClustering(cluster_nbr, connectivity, "euclidian")
+    labels = agglo_clustering.fit_predict(features)
+    sets = {}
+
+    for index in range(0, len(labels)):
+        location_index = location_map[index]
+        centroid_index = labels[index]
+
+        if centroid_index not in sets.keys():
+            sets[centroid_index] = {
+                "_id": str(centroid_index),
+                "locations": [],
+            }
+
+        sets[centroid_index]['locations'].append(location_index)
+
+    return sets.values()
 
 if __name__ == '__main__':
     connection = connect_postgres_db()
@@ -176,10 +234,13 @@ if __name__ == '__main__':
 
     features, doc_mapping = kmeans_feature_matrix(mongo_db.cluster_collection)
     # @Todo: find correct number of clusters (generate print)
-    sets = kmeans_cluster_locations(features, doc_mapping, LOCATION_CLUSTER_NBR)
+    connectivity = generate_connectivity(connection, doc_mapping)
+    sets = get_agglomerative_clustering(40, features, doc_mapping, connectivity)
+
+#    sets = kmeans_cluster_locations(features, doc_mapping, LOCATION_CLUSTER_NBR)
     mongo_db.centroid_collection.remove({})
-    write_kmeans_centorid(mongo_db.centroid_collection, mongo_db.cluster_collection, sets)
+    write_centorid(mongo_db.centroid_collection, mongo_db.cluster_collection, sets)
 
     # evaluation of accuracy
     df_users = generate_user_set(connection)
-    print compute_kmeans_accuracy(mongo_db.cluster_collection, df_users)
+    print compute_accuracy(mongo_db.cluster_collection, df_users)
