@@ -2,6 +2,7 @@
 Module that implements different sets to compute accuracy
 """
 import logging
+import numpy as np
 import pandas as pd
 
 from collections import Counter
@@ -187,10 +188,9 @@ def generate_connectivity(conn, location_map):
     """, conn)
 
     df_edge = pd.merge(df_cluster, df_cluster, left_on='user_id', right_on='user_id')
-    df_edge = df_edge[df_edge['cluster_id_x'] != df_edge['cluster_id_y']]
 
-    all_edge = df_edge[['cluster_id_x', 'cluster_id_y']].values
-    all_edge_tuple = [(edge[0], edge[1]) for edge in all_edge]
+    all_edge = np.unique(df_edge[['cluster_id_x', 'cluster_id_y']].values)
+    all_edge_tuple = set([(edge[0], edge[1]) for edge in all_edge])
 
     inverse_map = {val:key for key,val in enumerate(location_map)}
     
