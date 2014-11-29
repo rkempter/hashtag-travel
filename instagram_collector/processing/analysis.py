@@ -60,7 +60,20 @@ def plot_metrics(plot_title, mean, median, std, minimum, maximum, accuracy, nbr_
     fig.show()
 
 
-def set_cluster_analysis(centroid_collection, threshold, cluster_method="kmeans"):
+def get_topic_map(topic_collection):
+    """
+    Generates a map id -> name for topics
+    :param topic_collection:
+    :return:
+    """
+    topics = topic_collection.find({}, {"names": 1})
+    topic_map = {}
+    for topic in topics:
+        topic_map[topic["_id"]] = ", ".join(topic["names"])
+
+    return topic_map
+
+def set_cluster_analysis(centroid_collection, topic_collection, threshold, cluster_method="kmeans"):
     """
     Generates a color map for each cluster, describing the distribution of topics for each
     cluster (centroids)
@@ -70,6 +83,7 @@ def set_cluster_analysis(centroid_collection, threshold, cluster_method="kmeans"
     """
     import matplotlib as mpl
     cluster_nbr = centroid_collection.count()
+    topic_map = get_topic_map(topic_collection)
 
     # Does currently only work with kmeans++, as they generate the centroids directly
     if cluster_method != "kmeans":
@@ -111,12 +125,16 @@ def set_cluster_analysis(centroid_collection, threshold, cluster_method="kmeans"
             order_vals[index_order] += order_vals[index_order-1]
 
         ax = fig.add_axes([0.05, top, 0.8, 0.2 / cluster_nbr])
-#        unit = 1.0 / order_vals[-1]
-#        for index, left_pos in enumerate(order_vals[:-1]):
-#            ax.text(float(left_pos) * unit + unit / 2, 1.05, "%s." % inv_cat[order_[index]][:15],
-#                verticalalignment='bottom', horizontalalignment='left',
-#                rotation=45,
-#                fontsize=8)
+        unit = 1
+        if order_vals[-1] != 0:
+            unit = 1.0 / order_vals[-1]
+
+        for index, left_pos in enumerate(order_vals[:-1]):
+            topic = topic_map[order_topics[index]][:15]
+            ax.text(float(left_pos) * unit + unit / 2, 1.05, "%s." % topic,
+                verticalalignment='bottom', horizontalalignment='left',
+                rotation=45,
+                fontsize=8)
 
         cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
                                        norm=norm,
