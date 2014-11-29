@@ -33,7 +33,7 @@ def estimate_cluster_nbr(features, range_to_test):
     return distortions
 
 
-def plot_metrics(plot_title, mean, median, minimum, maximum, std, accuracy, nbr_cluster_range):
+def plot_metrics(plot_title, mean, median, std, minimum, maximum, accuracy, nbr_cluster_range):
     """
     Generates a plot with all the metrics
     :param plot_titile: The title of the plot
