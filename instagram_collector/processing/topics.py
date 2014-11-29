@@ -7,15 +7,18 @@ This modules handles the topic generation and assignes topics to clusters
 
 import json
 import logging
+import numpy as np
 import os
 import pandas as pd
+import subprocess
 
 from collections import defaultdict, Counter
 from instagram_collector.collector import connect_postgres_db
 from gensim import corpora, models
+from operator import itemgetter
 from pymongo import MongoClient
 
-from .config import TOPIC_NBR
+from .config import TOPIC_NBR, BTM_CALL
 
 logging.basicConfig(
     filename='topic_logs.log',level=logging.DEBUG,
@@ -62,6 +65,101 @@ def clean_tags(conn, query):
     #logging.info("Mean of hashtags per document: %f" % float(sum(map(lambda x: len(x), documents))) / len(documents))
     logging.info("Done with cleaning the tags")
     return documents
+
+
+def generate_btm_topics(documents, store_path, topic_collection, cluster_collection,
+                        alpha, beta, niter, save_step, nbr_topics=TOPIC_NBR):
+    """
+    Biterm topic modeling, using the software from the following:
+    https://code.google.com/p/btm/ and the corresponding paper
+    http://www2013.wwwconference.org/proceedings/p1445.pdf
+    :param documents: { cluster_id: x, tokens: [] }
+    :param store_path:
+    :param nbr_topics:
+    :return:
+    """
+    # First we need to create the dictionary
+
+    dictionary = corpora.Dictionary(documents)
+    input_path = os.path.join(store_path, "btm_input.txt")
+    doc2cluster = []
+    with open(input_path, "w+") as token_doc_file:
+        for document in documents:
+            token_doc = map(lambda token: dictionary.token2id[token], document["tokens"])
+            token_doc_file.write("%s\n" % " ".join(token_doc))
+            doc2cluster.append(document["cluster_id"])
+
+    # Learn paramters p(z) and p(z|w)
+    return_code = subprocess.call([BTM_CALL, "est", nbr_topics, len(dictionary.token2id),
+                                   alpha, beta, niter, save_step, input_path, store_path])
+
+    if return_code:
+        raise ValueError("Wrong return code while estimating parameters")
+
+    # Infer p(z|d)
+    return_code = subprocess.call([BTM_CALL, "inf", "lda", nbr_topics, input_path, store_path])
+
+    if return_code:
+        raise ValueError("Wrong return code received while infering p(z|d)")
+
+
+def write_mongo_btm_topics(topic_collection, store_path, threshold=0.05, topic_number=TOPIC_NBR):
+    """
+    Write the topics to the mongodb
+    :param topic_collection:
+    :param store_path:
+    :param threshold:
+    :param topic_number:
+    :return:
+    """
+    topics = []
+
+    dictionary = load_dictionary(store_path).id2token
+    topic_nbr = 0
+    with open(os.path.join(store_path, "pw_z.k%d" % topic_nbr)) as topic:
+        for distribution in topic.readlines():
+            distribution = distribution.split()
+            values = [float(value) for value in distribution]
+            word2value = zip(range(len(values)), values)
+            word2value_sorted = sorted(word2value, key=itemgetter(1), reverse=True)
+
+            topics.append({
+                "_id": topic_nbr,
+                "words": [(dictionary[token[0]], token[1]) for token in word2value_sorted[:15]],
+                "names": [dictionary[token[0]] for token in word2value_sorted[:15] if token[1] > threshold],
+                "clusters": [],
+            })
+            topic_nbr += 1
+    topic_collection.insert(topics)
+
+
+def write_btm_cluster_vector(cluster_collection, store_path, doc2cluster_map, topic_nbr=TOPIC_NBR):
+    """
+    Read in the output from the external btm program and generate the cluster vectors
+    :param cluster_collection:
+    :param store_path:
+    :param doc2cluster_map:
+    :param topic_nbr:
+    :return:
+    """
+    clusters = {}
+    document_id = 0
+    with open(os.path.join(store_path, "pz_d.k%d" % topic_nbr)) as document_collection:
+        for document_vector in document_collection:
+            topic_values = np.array([float(value) for value in document_vector.split()])
+            cluster_id = doc2cluster_map[document_id]
+
+            if cluster_id in clusters:
+                clusters[cluster_id] += topic_values
+            else:
+                clusters[cluster_id] = topic_values
+
+    for cluster_id, vector in clusters.items():
+        vector_normalized = vector / np.sum(vector)
+
+        cluster_collection.update({"_id": cluster_id},
+                                  {"$set": {"distribution": vector_normalized.tolist()}},
+                                  upsert=False)
 
 
 def generate_topics(documents, store_path, nbr_topics=TOPIC_NBR, tfidf_on=False):
