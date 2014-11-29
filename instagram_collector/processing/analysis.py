@@ -84,6 +84,7 @@ def set_cluster_analysis(centroid_collection, topic_collection, threshold, clust
     import matplotlib as mpl
     cluster_nbr = centroid_collection.count()
     topic_map = get_topic_map(topic_collection)
+    topic_map[101] = "Other"
 
     # Does currently only work with kmeans++, as they generate the centroids directly
     if cluster_method != "kmeans":
