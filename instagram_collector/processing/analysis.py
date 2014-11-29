@@ -96,14 +96,14 @@ def set_cluster_analysis(centroid_collection, threshold, cluster_method="kmeans"
     top = 0.9
     fig = plt.figure(figsize=(10, cluster_nbr*2))
     for centroid in centroids:
-        topic_distribution = defaultdict(int)
+        topic_distribution = defaultdict(float)
         for topic_nbr, share in enumerate(centroid['centroid']):
             if share > threshold:
                 topic_distribution[topic_nbr] += share
             else:
                 topic_distribution[101] += share
 
-        order = sorted(topic_distribution, key=itemgetter(1))
+        order = sorted(topic_distribution.items(), key=itemgetter(1))
         order_topics = map(lambda x: x[0], order)
         order_vals = [0]
         order_vals.extend(map(lambda x: x[1], order))
@@ -111,7 +111,7 @@ def set_cluster_analysis(centroid_collection, threshold, cluster_method="kmeans"
             order_vals[index_order] += order_vals[index_order-1]
 
         ax = fig.add_axes([0.05, top, 0.8, 0.2 / cluster_nbr])
-        unit = 1.0 / order_vals[-1]
+#        unit = 1.0 / order_vals[-1]
 #        for index, left_pos in enumerate(order_vals[:-1]):
 #            ax.text(float(left_pos) * unit + unit / 2, 1.05, "%s." % inv_cat[order_[index]][:15],
 #                verticalalignment='bottom', horizontalalignment='left',
