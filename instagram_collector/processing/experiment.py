@@ -10,7 +10,7 @@ from instagram_collector.collector import connect_postgres_db
 from instagram_collector.processing.generate_sets import (generate_connectivity,
     get_agglomerative_clustering, compute_accuracy, generate_user_set,
     write_centroid, get_feature_matrix, kmeans_cluster_locations)
-from instagram_collector.processing.analysis import get_centroid_stats
+from instagram_collector.processing.analysis import get_centroid_stats, plot_metrics
 from pymongo import MongoClient
 from sklearn.cluster import k_means
 
@@ -31,45 +31,6 @@ def estimate_cluster_nbr(features, range_to_test):
         distortions.append(inertia)
 
     return distortions
-
-
-def plot_metrics(plot_title, mean, median, std, minimum, maximum, accuracy, nbr_cluster_range):
-    """
-    Generates a plot with all the metrics
-    :param plot_titile: The title of the plot
-    :param mean: array
-    :param median: array
-    :param minimum: array
-    :param maximum: array
-    :param std: array
-    :param accuracy: array
-    :param nbr_cluster_range: an array of the number of clusters against which params are plotted
-    :return:
-    """
-
-    fig = plt.figure(figsize=(12,8))
-    plt.subplots_adjust(wspace=0.7, hspace=0.6)
-    fig.suptitle(plot_title, fontsize=14)
-    ax1 = fig.add_subplot(321)
-    ax1.set_title("Accuracy")
-    ax1.plot(nbr_cluster_range, accuracy, "b*-")
-    ax2 = fig.add_subplot(322)
-    ax2.set_title("Mean")
-    ax2.plot(nbr_cluster_range, mean, "b*-")
-    ax3 = fig.add_subplot(323)
-    ax3.set_title("Median")
-    ax3.plot(nbr_cluster_range, median, "b*-")
-    ax4 = fig.add_subplot(324)
-    ax4.set_title("Std")
-    ax4.plot(nbr_cluster_range, std, "b*-")
-    ax5 = fig.add_subplot(325)
-    ax5.set_title("Minimum")
-    ax5.plot(nbr_cluster_range, minimum, "b*-")
-    ax6 = fig.add_subplot(326)
-    ax6.set_title("Maximum")
-    ax6.plot(nbr_cluster_range, maximum, "b*-")
-
-    fig.show()
 
 
 def test_kmeans_clustering(nbr_cluster_range):
