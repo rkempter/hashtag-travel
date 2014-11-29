@@ -102,6 +102,8 @@ def generate_btm_topics(documents, store_path, topic_collection, cluster_collect
     if return_code:
         raise ValueError("Wrong return code received while infering p(z|d)")
 
+    return doc2cluster
+
 
 def write_mongo_btm_topics(topic_collection, store_path, threshold=0.05, topic_number=TOPIC_NBR):
     """
