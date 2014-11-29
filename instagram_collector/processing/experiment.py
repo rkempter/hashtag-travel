@@ -49,7 +49,7 @@ def test_agglomerative_clustering(nbr_cluster_range, use_connectivity=False):
     std_i = []
     accuracy_i = []
 
-    for nbr_cluster in range(0, nbr_cluster_range):
+    for nbr_cluster in nbr_cluster_range:
         accuracy, mean, median, minium, maximum, std = \
             do_agglomerative_clustering(conn, mongo_db, features,id_mapping, nbr_cluster,
                                         connectivity)
@@ -61,25 +61,26 @@ def test_agglomerative_clustering(nbr_cluster_range, use_connectivity=False):
         accuracy_i.append(accuracy)
 
     # Generate the plots
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12,8))
+    plt.subplots_adjust(wspace=0.7, hspace=0.6)
 
     ax1 = fig.add_subplot(321)
-    ax1.title(nbr_cluster_range, "Accuracy", "b*-")
-    ax1.plot(accuracy_i)
+    ax1.set_title("Accuracy")
+    ax1.plot(nbr_cluster_range, accuracy_i, "b*-")
     ax2 = fig.add_subplot(322)
-    ax2.title("Mean")
+    ax2.set_title("Mean")
     ax2.plot(nbr_cluster_range, mean_i, "b*-")
     ax3 = fig.add_subplot(323)
-    ax3.title("Median")
+    ax3.set_title("Median")
     ax3.plot(nbr_cluster_range, median_i, "b*-")
     ax4 = fig.add_subplot(324)
-    ax4.title("Std")
+    ax4.set_title("Std")
     ax4.plot(nbr_cluster_range, std_i, "b*-")
     ax5 = fig.add_subplot(325)
-    ax5.title("Minimum number of locations in a cluster")
+    ax5.set_title("Minimum number of locations in a cluster")
     ax5.plot(nbr_cluster_range, minimum_i, "b*-")
     ax6 = fig.add_subplot(326)
-    ax6.title("Maximum number of locations in a cluster")
+    ax6.set_title("Maximum number of locations in a cluster")
     ax6.plot(nbr_cluster_range, maximum_i, "b*-")
 
     fig.show()
@@ -98,8 +99,7 @@ def do_agglomerative_clustering(conn, mongo_db, features, id_mapping,
     mongo_db.centroid_collection.remove({})
     write_centroid(mongo_db.centroid_collection, mongo_db.cluster_collection, sets)
     df_users = generate_user_set(conn)
-    locations = map(lambda cluster_set: cluster_set['locations'], sets)
-
+    locations = map(lambda cluster_set: len(cluster_set['locations']), sets)
     # Compute metrics
     accuracy = compute_accuracy(mongo_db.cluster_collection, df_users)
     mean, median, minimum, maximum, std = get_centroid_stats(locations)
