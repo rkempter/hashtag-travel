@@ -51,22 +51,22 @@ def plot_metrics(plot_title, mean, median, minimum, maximum, std, accuracy, nbr_
     plt.subplots_adjust(wspace=0.7, hspace=0.6)
     fig.suptitle(plot_title, fontsize=14)
     ax1 = fig.add_subplot(321)
-    ax1.title(nbr_cluster_range, "Accuracy", "b*-")
-    ax1.plot(accuracy)
+    ax1.set_title("Accuracy")
+    ax1.plot(nbr_cluster_range, accuracy, "b*-")
     ax2 = fig.add_subplot(322)
-    ax2.title("Mean")
+    ax2.set_title("Mean")
     ax2.plot(nbr_cluster_range, mean, "b*-")
     ax3 = fig.add_subplot(323)
-    ax3.title("Median")
+    ax3.set_title("Median")
     ax3.plot(nbr_cluster_range, median, "b*-")
     ax4 = fig.add_subplot(324)
-    ax4.title("Std")
+    ax4.set_title("Std")
     ax4.plot(nbr_cluster_range, std, "b*-")
     ax5 = fig.add_subplot(325)
-    ax5.title("Minimum")
+    ax5.set_title("Minimum")
     ax5.plot(nbr_cluster_range, minimum, "b*-")
     ax6 = fig.add_subplot(326)
-    ax6.title("Maximum")
+    ax6.set_title("Maximum")
     ax6.plot(nbr_cluster_range, maximum, "b*-")
 
     fig.show()
@@ -94,7 +94,7 @@ def test_kmeans_clustering(nbr_cluster_range):
     std_i = []
     accuracy_i = []
 
-    for nbr_cluster in range(0, nbr_cluster_range):
+    for nbr_cluster in nbr_cluster_range:
         accuracy, mean, median, minium, maximum, std = \
             do_kmeans_clustering(conn, mongo_db, features,id_mapping, nbr_cluster)
 
@@ -105,8 +105,8 @@ def test_kmeans_clustering(nbr_cluster_range):
         std_i.append(std)
         accuracy_i.append(accuracy)
 
-    plot_metrics(plot_title, accuracy_i, mean_i, median_i, std_i,
-                 minimum_i, maximum_i, nbr_cluster_range)
+    plot_metrics(plot_title, mean_i, median_i, std_i,
+                 minimum_i, maximum_i, accuracy_i, nbr_cluster_range)
 
 
 def do_kmeans_clustering(conn, mongo_db, features, id_mapping, nbr_cluster):
@@ -120,7 +120,7 @@ def do_kmeans_clustering(conn, mongo_db, features, id_mapping, nbr_cluster):
     mongo_db.centroid_collection.remove({})
     write_centroid(mongo_db.centroid_collection, mongo_db.cluster_collection, sets)
     df_users = generate_user_set(conn)
-    locations = map(lambda cluster_set: cluster_set['locations'], sets)
+    locations = map(lambda cluster_set: len(cluster_set['locations']), sets)
 
     # Compute metrics
     accuracy = compute_accuracy(mongo_db.cluster_collection, df_users)
@@ -166,8 +166,8 @@ def test_agglomerative_clustering(nbr_cluster_range, use_connectivity=False):
         std_i.append(std)
         accuracy_i.append(accuracy)
 
-    plot_metrics(plot_title, accuracy_i, mean_i, median_i, std_i,
-                 minimum_i, maximum_i, nbr_cluster_range)
+    plot_metrics(plot_title, mean_i, median_i, std_i,
+                 minimum_i, maximum_i, accuracy_i, nbr_cluster_range)
 
 
 def do_agglomerative_clustering(conn, mongo_db, features, id_mapping,
