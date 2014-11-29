@@ -93,7 +93,7 @@ def set_cluster_analysis(centroid_collection, topic_collection, threshold, clust
                                   "we first need to generate the centroids based on the "
                                   "locations.")
 
-    centroids = centroid_collection.find({}, {"centroid": 1})
+    centroids = centroid_collection.find({}, {"centroid": 1, "locations": 1})
     topic_nbr = 100 #TODO(@rkempter): Make this dynamic
 
     # Create discrete colorbar
@@ -120,19 +120,17 @@ def set_cluster_analysis(centroid_collection, topic_collection, threshold, clust
 
         order = sorted(topic_distribution.items(), key=itemgetter(1))
         order_topics = map(lambda x: x[0], order)
-        order_vals = [0]
+        order_vals = [0.0]
         order_vals.extend(map(lambda x: x[1], order))
         for index_order in range(1,len(order_vals)):
             order_vals[index_order] += order_vals[index_order-1]
 
         ax = fig.add_axes([0.05, top, 0.8, 0.2 / cluster_nbr])
-        unit = 1
-        if order_vals[-1] != 0:
-            unit = 1.0 / order_vals[-1]
+        unit = 1.0
 
         for index, left_pos in enumerate(order_vals[:-1]):
             topic = topic_map[order_topics[index]][:15]
-            ax.text(float(left_pos) * unit + unit / 2, 1.05, "%s." % topic,
+            ax.text(float(left_pos) * unit + threshold / 2, 1.05, "%s." % topic,
                 verticalalignment='bottom', horizontalalignment='left',
                 rotation=45,
                 fontsize=8)
@@ -144,7 +142,7 @@ def set_cluster_analysis(centroid_collection, topic_collection, threshold, clust
                                        ticks=order_vals, # optional
                                        spacing='proportional',
                                        orientation='horizontal')
-   #     cb.set_label('Categories in community %d' % community)
+        cb.set_label('Number of locations: %d' % len(centroid['locations']))
         top -= 0.8 / cluster_nbr
 
     plt.show()
