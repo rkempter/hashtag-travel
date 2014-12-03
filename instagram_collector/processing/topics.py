@@ -13,6 +13,7 @@ import pandas as pd
 import subprocess
 
 from collections import defaultdict, Counter
+from decimal import Decimal
 from instagram_collector.collector import connect_postgres_db
 from instagram_collector.helper import to_unicode_or_bust
 from gensim import corpora, models
@@ -27,7 +28,7 @@ logging.basicConfig(
 )
 
 
-def clean_tags(conn, query, btm=False):
+def clean_tags(conn, query, btm=False, stop_words=[]):
     """
     Loads the hashtags from database and cleans them. Tags that appear only once in the corpus
     are removed. Returns the filtered documents
@@ -44,7 +45,8 @@ def clean_tags(conn, query, btm=False):
     if btm:
         cluster_ids = df_hashtags['cluster_id'].values
     # flatten the list
-    hashtags_flat = [tag for subtags in docs for tag in subtags if tag != '' and len(tag) > 3]
+    hashtags_flat = [tag for subtags in docs for tag in subtags
+                     if tag != '' and len(tag) > 3 and tag not in stop_words]
 
     # Count all hashtags with
     hashtags_count = Counter(tag for tag in hashtags_flat)
@@ -61,7 +63,7 @@ def clean_tags(conn, query, btm=False):
             for hashtag in doc
             if hashtag not in filtered_hashtag_all and hashtag != ''
         ]
-        if new_doc and len(new_doc) > 1:
+        if new_doc and len(new_doc) >= 2:
             documents.append(new_doc)
             if btm:
                 cluster_id.append(cluster_ids[index])
@@ -91,8 +93,7 @@ def generate_btm_topics(documents, store_path, topic_collection, cluster_collect
     dictionary = corpora.Dictionary(map(lambda x: x['tokens'], documents))
     dictionary.save(os.path.join(store_path, "dictionary.dict"))
     dictionary = dictionary.token2id
-    input_path = os.path.join(store_path, "btm_input.txt")
-    print input_path
+
     doc2cluster = []
     with open(input_path, "w+") as token_doc_file:
         for document in documents:
@@ -134,7 +135,7 @@ def write_mongo_btm_topics(topic_collection, store_path, threshold=0.01, topic_n
     with open(os.path.join(store_path, "pw_z.k%d" % topic_number)) as topic:
         for distribution in topic.readlines():
             distribution = distribution.split()
-            values = [float(value) for value in distribution]
+            values = [Decimal(value) for value in distribution]
             word2value = zip(range(len(values)), values)
             word2value_sorted = sorted(word2value, key=itemgetter(1), reverse=True)
 
@@ -161,7 +162,7 @@ def write_btm_cluster_vector(cluster_collection, store_path, doc2cluster_map, to
     document_id = 0
     with open(os.path.join(store_path, "pz_d.k%d" % topic_nbr)) as document_collection:
         for document_vector in document_collection:
-            topic_values = np.array([float(value) for value in document_vector.split()])
+            topic_values = np.array([Decimal(value) for value in document_vector.split()])
             cluster_id = doc2cluster_map[document_id]
 
             if cluster_id in clusters:
@@ -173,7 +174,7 @@ def write_btm_cluster_vector(cluster_collection, store_path, doc2cluster_map, to
         vector_normalized = vector / np.sum(vector)
 
         cluster_collection.update({"_id": cluster_id},
-                                  {"$set": {"distribution": vector_normalized.tolist()}},
+                                  {"$set": {"distribution": [str(val) for val in vector_normalized.tolist()]}},
                                   upsert=False)
 
 
@@ -262,7 +263,7 @@ def get_topics(lda_model, documents):
 
     corpus_model = lda_model[documents]
 
-    topic_distribution = defaultdict(float)
+    topic_distribution = defaultdict(Decimal)
 
     # compute distribution
     for document in corpus_model:
@@ -274,7 +275,7 @@ def get_topics(lda_model, documents):
 
     logging.info("Done generating the topics for documents")
 
-    return {"%d" % key: (val / total) for key, val in topic_distribution.items()}
+    return {"%d" % key: str((val / total)) for key, val in topic_distribution.items()}
 
 
 def write_mongodb_distribution(conn, store_path, cluster_collection):
