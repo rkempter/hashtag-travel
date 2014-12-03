@@ -156,17 +156,17 @@ def btm_topic_modelling(storage_path):
     from .topics import (clean_tags, generate_btm_topics, write_btm_cluster_vector,
                          write_mongo_btm_topics)
     start_query = """
-        SELECT tags
+        SELECT cluster_id, tags
         FROM media_events
         WHERE tags != '';"""
     connection = connect_postgres_db()
     client = MongoClient()
     mongo_db = client.paris_db
 
-    training_documents = clean_tags(connection, start_query)
+    training_documents = clean_tags(connection, start_query, btm=True)
     doc2cluster_map = generate_btm_topics(training_documents, storage_path,
                                           mongo_db.topic_collection, mongo_db.cluster_collection,
                                           3, 0.01, 500, 101)
-
+    mongo_db.topic_collection.remove({})
     write_mongo_btm_topics(mongo_db.topic_collection, storage_path)
     write_btm_cluster_vector(mongo_db.cluster_collection, storage_path, doc2cluster_map)

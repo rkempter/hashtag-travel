@@ -125,6 +125,8 @@ def set_cluster_analysis(centroid_collection, topic_collection, threshold, clust
         for index_order in range(1,len(order_vals)):
             order_vals[index_order] += order_vals[index_order-1]
 
+        if order_vals[-1] < 0.99:
+            continue
         ax = fig.add_axes([0.05, top, 0.8, 0.2 / cluster_nbr])
         unit = 1.0
 
@@ -134,9 +136,7 @@ def set_cluster_analysis(centroid_collection, topic_collection, threshold, clust
                 verticalalignment='bottom', horizontalalignment='left',
                 rotation=45,
                 fontsize=8)
-        print order_topics
-        print order_vals
-        print "======="
+        
         cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
                                        norm=norm,
                                        values=order_topics,
