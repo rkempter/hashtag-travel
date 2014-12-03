@@ -134,9 +134,7 @@ def set_cluster_analysis(centroid_collection, topic_collection, threshold, clust
                 verticalalignment='bottom', horizontalalignment='left',
                 rotation=45,
                 fontsize=8)
-        print order_topics
-        print order_vals
-        print "======="
+
         cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
                                        norm=norm,
                                        values=order_topics,

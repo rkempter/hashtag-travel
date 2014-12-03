@@ -13,6 +13,7 @@ import pandas as pd
 import subprocess
 
 from collections import defaultdict, Counter
+from decimal import Decimal
 from instagram_collector.collector import connect_postgres_db
 from gensim import corpora, models
 from operator import itemgetter
@@ -26,7 +27,7 @@ logging.basicConfig(
 )
 
 
-def clean_tags(conn, query):
+def clean_tags(conn, query, stop_words=[]):
     """
     Loads the hashtags from database and cleans them. Tags that appear only once in the corpus
     are removed. Returns the filtered documents
@@ -42,7 +43,8 @@ def clean_tags(conn, query):
     docs = df_hashtags['tags'].str.split(',').values
 
     # flatten the list
-    hashtags_flat = [tag for subtags in docs for tag in subtags if tag != '' and len(tag) > 3]
+    hashtags_flat = [tag for subtags in docs for tag in subtags
+                     if tag != '' and len(tag) > 3 and tag not in stop_words]
 
     # Count all hashtags with
     hashtags_count = Counter(tag for tag in hashtags_flat)
@@ -58,7 +60,7 @@ def clean_tags(conn, query):
             for hashtag in doc
             if hashtag not in filtered_hashtag_all and hashtag != ''
         ]
-        if new_doc:
+        if new_doc and len(new_doc) >= 2:
             documents.append(new_doc)
 
     logging.info("Number of unique hashtags: %d" % len(filtered_hashtag_all))
@@ -80,11 +82,12 @@ def generate_btm_topics(documents, store_path, topic_collection, cluster_collect
     """
     # First we need to create the dictionary
 
-    dictionary = corpora.Dictionary(documents)
+    dictionary = corpora.Dictionary(documents).token2id
     input_path = os.path.join(store_path, "btm_input.txt")
     doc2cluster = []
     with open(input_path, "w+") as token_doc_file:
         for document in documents:
+            print dictionary.token2id
             token_doc = map(lambda token: dictionary.token2id[token], document["tokens"])
             token_doc_file.write("%s\n" % " ".join(token_doc))
             doc2cluster.append(document["cluster_id"])
@@ -105,7 +108,7 @@ def generate_btm_topics(documents, store_path, topic_collection, cluster_collect
     return doc2cluster
 
 
-def write_mongo_btm_topics(topic_collection, store_path, threshold=0.05, topic_number=TOPIC_NBR):
+def write_mongo_btm_topics(topic_collection, store_path, threshold=0.01, topic_number=TOPIC_NBR):
     """
     Write the topics to the mongodb
     :param topic_collection:
@@ -121,7 +124,7 @@ def write_mongo_btm_topics(topic_collection, store_path, threshold=0.05, topic_n
     with open(os.path.join(store_path, "pw_z.k%d" % topic_nbr)) as topic:
         for distribution in topic.readlines():
             distribution = distribution.split()
-            values = [float(value) for value in distribution]
+            values = [Decimal(value) for value in distribution]
             word2value = zip(range(len(values)), values)
             word2value_sorted = sorted(word2value, key=itemgetter(1), reverse=True)
 
@@ -148,7 +151,7 @@ def write_btm_cluster_vector(cluster_collection, store_path, doc2cluster_map, to
     document_id = 0
     with open(os.path.join(store_path, "pz_d.k%d" % topic_nbr)) as document_collection:
         for document_vector in document_collection:
-            topic_values = np.array([float(value) for value in document_vector.split()])
+            topic_values = np.array([Decimal(value) for value in document_vector.split()])
             cluster_id = doc2cluster_map[document_id]
 
             if cluster_id in clusters:
@@ -160,7 +163,7 @@ def write_btm_cluster_vector(cluster_collection, store_path, doc2cluster_map, to
         vector_normalized = vector / np.sum(vector)
 
         cluster_collection.update({"_id": cluster_id},
-                                  {"$set": {"distribution": vector_normalized.tolist()}},
+                                  {"$set": {"distribution": [str(val) for val in vector_normalized.tolist()]}},
                                   upsert=False)
 
 
@@ -249,7 +252,7 @@ def get_topics(lda_model, documents):
 
     corpus_model = lda_model[documents]
 
-    topic_distribution = defaultdict(float)
+    topic_distribution = defaultdict(Decimal)
 
     # compute distribution
     for document in corpus_model:
@@ -261,7 +264,7 @@ def get_topics(lda_model, documents):
 
     logging.info("Done generating the topics for documents")
 
-    return {"%d" % key: (val / total) for key, val in topic_distribution.items()}
+    return {"%d" % key: str((val / total)) for key, val in topic_distribution.items()}
 
 
 def write_mongodb_distribution(conn, store_path, cluster_collection):

@@ -166,7 +166,7 @@ def btm_topic_modelling(storage_path):
     training_documents = clean_tags(connection, start_query)
     doc2cluster_map = generate_btm_topics(training_documents, storage_path,
                                           mongo_db.topic_collection, mongo_db.cluster_collection,
-                                          3, 0.01, 500, 101)
+                                          1, 0.01, 300, 80)
 
     write_mongo_btm_topics(mongo_db.topic_collection, storage_path)
     write_btm_cluster_vector(mongo_db.cluster_collection, storage_path, doc2cluster_map)
