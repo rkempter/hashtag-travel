@@ -31,7 +31,7 @@ def get_feature_matrix(cluster_collection, topic_nbr=TOPIC_NBR):
 
     for index, document in enumerate(documents):
         doc_mapping.append(document["_id"])
-        if "distribution" not in document:
+        if "distribution" not in document and not isinstance(document['distribution'], dict):
             continue
 
         features[index] = [float(value) for value in document['distribution']]
