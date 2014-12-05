@@ -125,6 +125,8 @@ def set_cluster_analysis(centroid_collection, topic_collection, threshold, clust
         for index_order in range(1,len(order_vals)):
             order_vals[index_order] += order_vals[index_order-1]
 
+        if order_vals[-1] < 0.99:
+            continue
         ax = fig.add_axes([0.05, top, 0.8, 0.2 / cluster_nbr])
         unit = 1.0
 
