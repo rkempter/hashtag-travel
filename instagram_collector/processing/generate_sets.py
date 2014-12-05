@@ -34,8 +34,7 @@ def get_feature_matrix(cluster_collection, topic_nbr=TOPIC_NBR):
         if "distribution" not in document:
             continue
 
-        for topic_id, value in document["distribution"].items():
-            features[index, int(topic_id)] = float(value)
+        features[index] = [float(value) for value in document['distribution']]
 
     return features, doc_mapping
 

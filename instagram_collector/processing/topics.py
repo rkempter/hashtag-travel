@@ -150,7 +150,7 @@ def write_btm_cluster_vector(cluster_collection, store_path, doc2cluster_map, to
     clusters = {}
     document_id = 0
     with open(os.path.join(store_path, "pz_d.k%d" % topic_nbr)) as document_collection:
-        for document_vector in document_collection:
+        for document_vector in document_collection.readlines():
             topic_values = np.array([Decimal(value) for value in document_vector.split()])
             cluster_id = doc2cluster_map[document_id]
 
@@ -163,8 +163,7 @@ def write_btm_cluster_vector(cluster_collection, store_path, doc2cluster_map, to
         vector_normalized = vector / np.sum(vector)
 
         cluster_collection.update({"_id": cluster_id},
-                                  {"$set": {"distribution": [str(val) for val in vector_normalized.tolist()]}},
-                                  upsert=False)
+                                  {"$set": {"distribution": [str(val) for val in vector_normalized.tolist()]}})
 
 
 def generate_topics(documents, store_path, nbr_topics=TOPIC_NBR, tfidf_on=False):
