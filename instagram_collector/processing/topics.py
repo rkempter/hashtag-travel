@@ -45,8 +45,8 @@ def clean_tags(conn, query, btm=False, stop_words=[]):
     if btm:
         cluster_ids = df_hashtags['cluster_id'].values
     # flatten the list
-    hashtags_flat = [tag for subtags in docs for tag in subtags
-                     if tag != '' and len(tag) > 3 and tag not in stop_words]
+    hashtags_flat = [tag.lower() for subtags in docs for tag in subtags
+                     if tag != '']
 
     # Count all hashtags with
     hashtags_count = Counter(tag for tag in hashtags_flat)
@@ -59,9 +59,10 @@ def clean_tags(conn, query, btm=False, stop_words=[]):
 
     for index, doc in enumerate(docs):
         new_doc = [
-            hashtag
+            hashtag.lower()
             for hashtag in doc
-            if hashtag not in filtered_hashtag_all and hashtag != ''
+            if hashtag not in filtered_hashtag_all and hashtag != '' and
+            hashtag not in stop_words and len(hashtag) > 3
         ]
         if new_doc and len(new_doc) >= 2:
             documents.append(new_doc)
@@ -93,7 +94,7 @@ def generate_btm_topics(documents, store_path, topic_collection, cluster_collect
     dictionary = corpora.Dictionary(map(lambda x: x['tokens'], documents))
     dictionary.save(os.path.join(store_path, "dictionary.dict"))
     dictionary = dictionary.token2id
-
+    input_path = os.path.join(store_path, "btm_input.txt")
     doc2cluster = []
     with open(input_path, "w+") as token_doc_file:
         for document in documents:
@@ -102,19 +103,19 @@ def generate_btm_topics(documents, store_path, topic_collection, cluster_collect
             doc2cluster.append(document["cluster_id"])
 
     # Learn paramters p(z) and p(z|w)
-    cmd = "%s est %d %d %f %f %d %d %s %s" % (BTM_CALL, nbr_topics, len(dictionary), alpha,
-                                              beta, niter, save_step, input_path, store_path)
+#    cmd = "%s est %d %d %f %f %d %d %s %s" % (BTM_CALL, nbr_topics, len(dictionary), alpha,
+#                                             beta, niter, save_step, input_path, store_path)
 #    return_code = subprocess.call(cmd.split())
-
+#
 #    if return_code:
- #       raise ValueError("Wrong return code while estimating parameters")
-
-    # Infer p(z|d)
- #   cmd = "%s inf lda %d %s %s" % (BTM_CALL, nbr_topics, input_path, store_path)
- #   return_code = subprocess.call(cmd.split())
-
-  #  if return_code:
-   #     raise ValueError("Wrong return code received while infering p(z|d)")
+#        raise ValueError("Wrong return code while estimating parameters")
+#
+#    # Infer p(z|d)
+#    cmd = "%s inf lda %d %s %s" % (BTM_CALL, nbr_topics, input_path, store_path)
+#    return_code = subprocess.call(cmd.split())
+#
+#    if return_code:
+#        raise ValueError("Wrong return code received while infering p(z|d)")
 
     return doc2cluster
 
@@ -141,7 +142,7 @@ def write_mongo_btm_topics(topic_collection, store_path, threshold=0.01, topic_n
 
             topics.append({
                 "_id": topic_nbr,
-                "words": [(dictionary[token[0]], token[1]) for token in word2value_sorted[:15]],
+                "words": [(dictionary[token[0]], str(token[1])) for token in word2value_sorted[:15]],
                 "names": [dictionary[token[0]] for token in word2value_sorted[:3]],
                 "clusters": [],
             })
@@ -161,15 +162,15 @@ def write_btm_cluster_vector(cluster_collection, store_path, doc2cluster_map, to
     clusters = {}
     document_id = 0
     with open(os.path.join(store_path, "pz_d.k%d" % topic_nbr)) as document_collection:
-        for document_vector in document_collection:
+        for document_vector in document_collection.readlines():
             topic_values = np.array([Decimal(value) for value in document_vector.split()])
             cluster_id = doc2cluster_map[document_id]
-
+            document_id += 1
             if cluster_id in clusters:
                 clusters[cluster_id] += topic_values
             else:
                 clusters[cluster_id] = topic_values
-
+    
     for cluster_id, vector in clusters.items():
         vector_normalized = vector / np.sum(vector)
 
@@ -201,11 +202,11 @@ def generate_topics(documents, store_path, nbr_topics=TOPIC_NBR, tfidf_on=False)
     logging.info("Done generating topics")
 
 
-def write_mongo_topics(topic_collection, store_path, threshold=0.05, topic_number=TOPIC_NBR):
+def write_mongo_topics(topic_collection, store_path, threshold=0.05, topic_nbr=TOPIC_NBR):
     topics = []
 
     lda_model = load_model(store_path)
-    for topic_index in range(0, topic_number):
+    for topic_index in range(0, topic_nbr):
         topic_words = lda_model.show_topic(topic_index)
         names = [word for probability, word in topic_words if probability > threshold]
 

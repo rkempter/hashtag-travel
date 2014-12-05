@@ -162,11 +162,11 @@ def btm_topic_modelling(storage_path):
     connection = connect_postgres_db()
     client = MongoClient()
     mongo_db = client.paris_db
-
-    training_documents = clean_tags(connection, start_query, btm=True)
+    topic_nbr = 80
+    training_documents = clean_tags(connection, start_query, btm=True, stop_words=['paris', 'love', 'france'])
     doc2cluster_map = generate_btm_topics(training_documents, storage_path,
                                           mongo_db.topic_collection, mongo_db.cluster_collection,
-                                          1, 0.01, 300, 80)
+                                          1, 0.01, 300, 101, topic_nbr)
 
-    write_mongo_btm_topics(mongo_db.topic_collection, storage_path)
-    write_btm_cluster_vector(mongo_db.cluster_collection, storage_path, doc2cluster_map)
+#    write_mongo_btm_topics(mongo_db.topic_collection, storage_path, topic_number=topic_nbr)
+    write_btm_cluster_vector(mongo_db.cluster_collection, storage_path, doc2cluster_map, topic_nbr=topic_nbr)
