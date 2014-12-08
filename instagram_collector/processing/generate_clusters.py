@@ -108,30 +108,6 @@ def update_cluster(conn):
     cursor.executemany(insert_query, cluster)
     conn.commit()
 
-    def _compute_radius(center, bounding_box):
-        """
-        Computes the maximal radius of a cluster around the center of mass, which contains
-        all instagrams of the cluster.
-
-        :param center: The center of mass of a cluster
-        :param bounding_box: The bounding box around points of a cluster
-        :return: radius in meters (float)
-        """
-        points = [(center.x, bounding_box[0][1]), (center.x, bounding_box[3][1]),
-            (bounding_box[0][0], center.y), (bounding_box[3][0], center.y)]
-
-        return max(map(lambda x: great_circle_distance(x[0], x[1]), points))
-
-    cluster = []
-
-    for id, name, center, boundary in result:
-        center = loads(center)
-        radius = _compute_radius(center, boundary)
-        cluster.append((id, name, dumps(center), radius))
-
-    cursor.executemany(insert_query, cluster)
-    conn.commit()
-
 
 def write_cluster_mongodb(conn, cluster_collection):
     """
