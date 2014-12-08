@@ -2,7 +2,7 @@
 Augment the clusters with information from foursquare
 """
 
-import foursquare as fq
+import venue as fq
 import logging
 
 from instagram_collector.config import (FOURSQUARE_CLIENT_ID, FOURSQUARE_CLIENT_SECRET,
@@ -65,6 +65,9 @@ def map_venue(data):
 
 
 def retrieve_foursquare_data(foursquare_api, query, lat, lng):
+
+    foursquare_api = fq.Foursquare(client_id=FOURSQUARE_CLIENT_ID,
+                                   client_secret=FOURSQUARE_CLIENT_SECRET)
 
     try:
         data = foursquare_api.venues.search(params={

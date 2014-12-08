@@ -4,7 +4,7 @@
 
 from collections import defaultdict
 
-import foursquare as fq
+import venue as fq
 import logging
 
 from instagram_collector.config import FOURSQUARE_CLIENT_ID,\
@@ -199,15 +199,6 @@ def get_foursquare_data(conn, venue_map, locations):
         except fq.InvalidAuth:
             logging.getLogger(__name__).error("Error while logging in.")
             break;
-
-    # Add all venues to the database
-    #cursor.executemany(insert_venue_sql, venues)
-    #conn.commit()
-
-    # Update all foreign keys
-    #print location_venue_map
-    #cursor.executemany(insert_foreign_key, location_venue_map)
-    #conn.commit()
 
 def execute():
     # create connection

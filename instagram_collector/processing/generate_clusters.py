@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from instagram_collector.collector import connect_postgres_db
-from .foursquare import retrieve_foursquare_data
+from .venue import retrieve_foursquare_data
 from pymongo import MongoClient
 from shapely.wkt import dumps, loads
 from shapely.geometry import Point, Polygon
