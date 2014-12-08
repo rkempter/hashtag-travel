@@ -3,28 +3,41 @@
 <head lang="en">
     <meta charset="UTF-8">
     <title>Paris Real-time topics</title>
-    <link rel="stylesheet" href="http://hashtag-travel.dev/../less/style.css">
+    <link rel="stylesheet" href="less/style.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/d3/2.10.0/d3.v2.min.js"></script>
     <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.1.0/knockout-min.js"></script>
+    <script type="text/javascript" src="js/observableDictionary.js"></script>
 </head>
 <body>
     <div id="cluster-info">
         <div id="search">
             <input type="text" placeholder="Search"/>
         </div>
-        <div class="text" data-bind="with: cluster">
-            <h1 data-bind="text: name"></h1>
-            <h3>Topics</h3>
-            <div class="distribution"></div>
+        <div class="text" data-bind="attr: { id: cluster.get('cluster_id') }">
+            <h1 data-bind="text: cluster.get('name')"></h1>
+            <div class="distribution" data-bind="if: cluster.get('distribution')">
+                <h3>Topics</h3>
+                <ul data-bind="foreach: cluster.get('distribution')">
+                    <li class="topic" data-bind="attr: { id: $data.topic_id }">
+                        <h4 data-bind="text: $data.names"></h4>
+                        <div class="progress">
+                            <span data-bind="style: { width: $data.share * 100 + '%' }" class="bar"></span>
+                            <span data-bind="text: $data.share * 100 + '%'"></span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div data-bind="if: cluster.get('media')">
             <h3>Photos</h3>
-            <ul data-bind="foreach: media" class="photos">
-                <li class="photo">
-                    <img data-bind="attr: { src: image_url, alt: $parent.name }"/>
-                </li>
-            </ul>
+                <ul data-bind="foreach: cluster.get('media')" class="photos">
+                    <li class="photo">
+                        <img data-bind="attr: { src: image_url, alt: $parent.name }"/>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
     <div id="map-wrapper">
