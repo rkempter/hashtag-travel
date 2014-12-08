@@ -196,15 +196,3 @@ def post_processing_user_limit(conn, min_user_count):
     except psycopg2.Error as e:
         logging.getLogger(__name__).error(e)
 
-def post_processing_location_name(conn):
-    """
-    We should get the most probable name of the location. It should also be written
-    in a correct way if possible.
-
-    Take center of each cluster and different location names. With the most probable one, query
-    foursquare.
-
-    :param conn:
-    :return:
-    """
-    pass

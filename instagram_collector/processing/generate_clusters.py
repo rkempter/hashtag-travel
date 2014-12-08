@@ -1,15 +1,15 @@
 """
 This module handles the processing of clusters
 """
+import foursquare as fq
 import json
 import numpy as np
 import pandas as pd
 
 from instagram_collector.config import (FOURSQUARE_CLIENT_ID, FOURSQUARE_CLIENT_SECRET)
 from instagram_collector.collector import connect_postgres_db
-from .venue import retrieve_foursquare_data
+from instagram_collector.processing.venue import retrieve_foursquare_data
 from pymongo import MongoClient
-from foursquare import Foursquare
 from shapely.wkt import dumps, loads
 from shapely.geometry import Point, Polygon
 
@@ -149,7 +149,7 @@ def write_cluster_mongodb(conn, cluster_collection):
 
     clusters = []
 
-    foursquare_api = Foursquare(client_id=FOURSQUARE_CLIENT_ID,
+    foursquare_api = fq.Foursquare(client_id=FOURSQUARE_CLIENT_ID,
                                 client_secret=FOURSQUARE_CLIENT_SECRET)
 
     for name, group in grouped_cluster:
