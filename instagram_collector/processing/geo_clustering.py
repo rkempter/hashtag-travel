@@ -191,7 +191,7 @@ def post_processing_user_limit(conn, min_user_count):
 
     cursor = conn.cursor()
     try:
-        cursor.execute(query, min_user_count)
+        cursor.execute(query, str(min_user_count))
         conn.commit()
     except psycopg2.Error as e:
         logging.getLogger(__name__).error(e)
