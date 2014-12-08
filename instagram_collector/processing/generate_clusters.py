@@ -159,12 +159,14 @@ def write_cluster_mongodb(conn, cluster_collection):
         cluster_data = {}
 
         try:
-            cluster_data.update(foursquare_api, retrieve_foursquare_data(cluster_name, center.x, center.y))
-        except Exception:
-            pass
+            data = retrieve_foursquare_data(foursquare_api, cluster_name, center.y, center.x)
+            cluster_data.update(data)
+        except Exception as e:
+            print e
+            print "something did not work"
 
         if not cluster_data:
-            cluster_data.update(dict(name=cluster_name, coordinates=[center.x, center.y]))
+            cluster_data.update(dict(name=cluster_name, coordinates=[center.y, center.x]))
 
         cluster_data.update({
             "_id": cluster_id,
