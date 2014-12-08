@@ -71,10 +71,10 @@ def retrieve_foursquare_data(query, lat, lng):
 
     try:
         data = foursquare_api.venues.search(params={
-                'query': query,
-                'll': "%s,%s" % (lat, lng),
-                'radius': FOURSQUARE_RADIUS}
-            )
+            'query': query,
+            'll': "%s,%s" % (lat, lng),
+            'radius': FOURSQUARE_RADIUS}
+        )
     except fq.RateLimitExceeded:
         logging.getLogger(__name__).error("Rate Limit Exceeded!")
         raise fq.RateLimiteExceeded
