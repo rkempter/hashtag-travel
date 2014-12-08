@@ -151,14 +151,14 @@ def write_cluster_mongodb(conn, cluster_collection):
         cluster_id, cluster_name, center, radius = name
         center = loads(center)
         group_values = group[['id', 'image_url', 'lat', 'lng']].values
-
+        cluster_data = {}
         try:
-            cluster_data = retrieve_foursquare_data(cluster_name, center.x, center.y)
+            cluster_data.update(retrieve_foursquare_data(cluster_name, center.x, center.y))
         except Exception:
             pass
 
         if not cluster_data:
-            cluster_data = dict(name=cluster_name, coordinates=[center.x, center.y])
+            cluster_data.update(dict(name=cluster_name, coordinates=[center.x, center.y]))
 
         cluster_data.update({
             "_id": cluster_id,

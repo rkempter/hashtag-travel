@@ -65,7 +65,7 @@ def map_venue(data):
 
 
 def retrieve_foursquare_data(query, lat, lng):
-
+    import foursquare as fq
     foursquare_api = fq.Foursquare(client_id=FOURSQUARE_CLIENT_ID,
                                    client_secret=FOURSQUARE_CLIENT_SECRET)
 
