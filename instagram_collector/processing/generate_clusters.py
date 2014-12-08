@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from instagram_collector.collector import connect_postgres_db
+from .foursquare import retrieve_foursquare_data
 from pymongo import MongoClient
 from shapely.wkt import dumps, loads
 from shapely.geometry import Point, Polygon
@@ -175,16 +176,14 @@ def write_cluster_mongodb(conn, cluster_collection):
         center = loads(center)
         group_values = group[['id', 'image_url', 'lat', 'lng']].values
 
-        clusters.append({
+        cluster_data = retrieve_foursquare_data(cluster_name, center.x, center.y)
+        cluster_data.update({
             "_id": cluster_id,
-            "coordinates": [center.x, center.y],
-            "name": cluster_name,
             "radius": radius,
             "media": [{"id": media[0],
-                       "image_url": media[1],
-                       "lat": media[2],
-                       "lng": media[3]} for media in group_values]
+                       "image_url": media[1]} for media in group_values]
         })
+        clusters.append(cluster_data)
 
     return cluster_collection.insert(clusters)
 

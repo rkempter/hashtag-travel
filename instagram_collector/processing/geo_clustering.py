@@ -156,6 +156,20 @@ def geo_clustering(conn, size_x=config.SIZE_X, size_y=config.SIZE_Y,
                     conn.commit()
                     cluster_nbr = np.max(labels) + 1
 
+
+def pre_processing(conn):
+    """
+    Set all cluster ids to NULL
+    :param conn:
+    :return:
+    """
+
+    query = """UPDATE media_events SET cluster_id = NULL;"""
+    cursor = conn.cursor()
+    cursor.execute(query)
+    conn.commit()
+
+
 def post_processing_user_limit(conn, min_user_count):
     """
     Post processing of clusters. Clusters need to fullfill some quality criterion
