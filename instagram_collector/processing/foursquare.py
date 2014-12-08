@@ -11,9 +11,6 @@ from instagram_collector.config import (FOURSQUARE_CLIENT_ID, FOURSQUARE_CLIENT_
 from instagram_collector.helper import to_unicode_or_bust
 
 
-
-
-
 def map_venue(data):
     """
     Return only the required keys from the received foursquare json
