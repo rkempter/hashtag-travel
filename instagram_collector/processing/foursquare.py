@@ -64,10 +64,7 @@ def map_venue(data):
     return venue
 
 
-def retrieve_foursquare_data(query, lat, lng):
-    import foursquare as fq
-    foursquare_api = fq.Foursquare(client_id=FOURSQUARE_CLIENT_ID,
-                                   client_secret=FOURSQUARE_CLIENT_SECRET)
+def retrieve_foursquare_data(foursquare_api, query, lat, lng):
 
     try:
         data = foursquare_api.venues.search(params={
