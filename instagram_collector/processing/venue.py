@@ -2,12 +2,9 @@
 Augment the clusters with information from foursquare
 """
 
-import venue as fq
 import logging
 
-from instagram_collector.config import (FOURSQUARE_CLIENT_ID, FOURSQUARE_CLIENT_SECRET,
-                                        FOURSQUARE_OAUTH_TOKEN, FOURSQUARE_RADIUS,
-                                        FOURSQUARE_REDIRECT_URL)
+from instagram_collector.config import FOURSQUARE_RADIUS
 from instagram_collector.helper import to_unicode_or_bust
 
 
@@ -66,21 +63,11 @@ def map_venue(data):
 
 def retrieve_foursquare_data(foursquare_api, query, lat, lng):
 
-    foursquare_api = fq.Foursquare(client_id=FOURSQUARE_CLIENT_ID,
-                                   client_secret=FOURSQUARE_CLIENT_SECRET)
-
-    try:
-        data = foursquare_api.venues.search(params={
-            'query': query,
-            'll': "%s,%s" % (lat, lng),
-            'radius': FOURSQUARE_RADIUS}
-        )
-    except fq.RateLimitExceeded:
-        logging.getLogger(__name__).error("Rate Limit Exceeded!")
-        raise fq.RateLimiteExceeded
-    except fq.InvalidAuth:
-        logging.getLogger(__name__).error("Error while logging in.")
-        raise fq.InvalidAuth
+    data = foursquare_api.venues.search(params={
+        'query': query,
+        'll': "%s,%s" % (lat, lng),
+        'radius': FOURSQUARE_RADIUS}
+    )
 
     if data['venues']:
         venue = foursquare_api.venues(data['venues'][0]['id'])

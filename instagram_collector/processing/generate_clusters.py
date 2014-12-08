@@ -5,6 +5,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from instagram_collector.config import (FOURSQUARE_CLIENT_ID, FOURSQUARE_CLIENT_SECRET)
 from instagram_collector.collector import connect_postgres_db
 from .venue import retrieve_foursquare_data
 from pymongo import MongoClient
