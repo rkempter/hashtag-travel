@@ -6,8 +6,9 @@ import numpy as np
 import pandas as pd
 
 from instagram_collector.collector import connect_postgres_db
-from .foursquare import retrieve_foursquare_data
+from instagram_collector.processing.foursquare import retrieve_foursquare_data
 from pymongo import MongoClient
+from foursquare import Foursquare
 from shapely.wkt import dumps, loads
 from shapely.geometry import Point, Polygon
 
@@ -147,13 +148,17 @@ def write_cluster_mongodb(conn, cluster_collection):
 
     clusters = []
 
+    foursquare_api = Foursquare(client_id=FOURSQUARE_CLIENT_ID,
+                                client_secret=FOURSQUARE_CLIENT_SECRET)
+
     for name, group in grouped_cluster:
         cluster_id, cluster_name, center, radius = name
         center = loads(center)
         group_values = group[['id', 'image_url', 'lat', 'lng']].values
         cluster_data = {}
+
         try:
-            cluster_data.update(retrieve_foursquare_data(cluster_name, center.x, center.y))
+            cluster_data.update(foursquare_api, retrieve_foursquare_data(cluster_name, center.x, center.y))
         except Exception:
             pass
 
