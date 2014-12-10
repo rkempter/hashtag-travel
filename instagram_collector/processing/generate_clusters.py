@@ -73,8 +73,8 @@ def update_cluster(conn):
 
     insert_query = """
         INSERT INTO
-            cluster (id, name, center, radius)
-        VALUES (%s, %s, ST_GeomFromText(%s, 4326), %s);"""
+            cluster (id, name, center, radius, user_count, instagram_count)
+        VALUES (%s, %s, ST_GeomFromText(%s, 4326), %s, %s, %s);"""
 
     cursor = conn.cursor()
     cursor.execute(remove_query)
@@ -103,10 +103,10 @@ def update_cluster(conn):
 
     cluster = []
 
-    for id, name, center, boundary in result:
+    for id, name, center, boundary, user_count, instagram_count in result:
         center = loads(center)
         radius = _compute_radius(center, boundary)
-        cluster.append((id, name, dumps(center), radius))
+        cluster.append((id, name, dumps(center), radius, user_count, instagram_count))
 
     cursor.executemany(insert_query, cluster)
     conn.commit()

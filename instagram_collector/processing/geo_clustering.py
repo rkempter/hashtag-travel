@@ -25,10 +25,7 @@ def get_points(conn, shape_string):
         FROM
             media_events
         WHERE
-            ST_Contains(
-                ST_GeomFromText('Polygon((%s))', 4326),
-                geom);
-    """ % shape_string)
+            ST_Contains(ST_GeomFromText('Polygon((%s))', 4326), geom);""" % shape_string)
 
     return cur.fetchall()
 
