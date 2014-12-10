@@ -4,8 +4,7 @@ import logging
 
 from instagram_collector.collector import connect_postgres_db
 from instagram_collector.processing.generate_clusters import update_cluster, write_cluster_mongodb
-from instagram_collector.processing.generate_sets import (get_feature_matrix,
-                                                          kmeans_cluster_locations, write_centroid)
+from instagram_collector.processing.topic_sets import get_sets
 from instagram_collector.processing.geo_clustering import (geo_clustering,
                                                            post_processing_user_limit,
                                                            pre_processing)
@@ -21,9 +20,21 @@ def execute_workflow(topic_nbr):
     mongo_db = mongo.paris_db
     store_path = "/home/rkempter/research/btm/"
     start_query = """
-        SELECT cluster_id, tags
-        FROM media_events
-        WHERE tags != '';"""
+        WITH sample AS (
+            SELECT
+                cluster_id,
+                tags,
+                ROW_NUMBER() OVER(PARTITION BY cluster_id, user_id ORDER BY random()) AS rk
+            FROM media_events
+            WHERE
+                tags != '')
+        SELECT
+            s.cluster_id,
+            s.tags
+        FROM
+            sample s
+        WHERE
+            s.rk = 1;"""
 
     mongo_db.location_collection.remove({})
     mongo_db.set_collection.remove({})
@@ -68,14 +79,5 @@ def execute_workflow(topic_nbr):
     logging.getLogger(__name__).info("Get the distribution")
     write_btm_cluster_vector(mongo_db.location_collection, store_path, doc2cluster_map, topic_nbr=topic_nbr)
 
-    # Get features for each location
-    logging.getLogger(__name__).info("Generate the feature space for clustering")
-    features, id_map = get_feature_matrix(mongo_db.location_collection)
-
-    # Compute the sets
-    logging.getLogger(__name__).info("Cluster using kmeans")
-    sets = kmeans_cluster_locations(features, id_map, 60)
-
-    # Write the sets out
-    logging.getLogger(__name__).info("Write the sets to mongo db")
-    write_centroid(mongo_db.set_collection, mongo_db.location_collection, sets)
+    # Generate sets
+    get_sets(mongo_db.topic_collection, mongo_db.location_collection, 0.2, topic_nbr)
