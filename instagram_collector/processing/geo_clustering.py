@@ -27,8 +27,7 @@ def get_points(conn, shape_string):
         WHERE
             ST_Contains(
                 ST_GeomFromText('Polygon((%s))', 4326),
-                geom)
-            );
+                geom);
     """ % shape_string)
 
     return cur.fetchall()
