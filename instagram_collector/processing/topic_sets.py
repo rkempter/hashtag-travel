@@ -5,7 +5,7 @@ Module for computing similarity sets
 import numpy as np
 
 from instagram_collector.processing.config import TOPIC_NBR
-
+from operator import itemgetter
 
 def get_location_matrix(location_collection, topic_nbr=TOPIC_NBR):
     """
@@ -39,8 +39,11 @@ def get_sets(topic_collection, location_collection, threshold, topic_nbr=TOPIC_N
 
     for topic_nbr, topic_distribution in enumerate(location_matrix):
         topic_set = []
-        for location_index, value in enumerate(topic_distribution):
-            if value > threshold:
+        topic_distribution = {key: val for key, val in enumerate(topic_distribution)}
+        topic_distribution = sorted(topic_distribution.items(), key=itemgetter(1), reverse=True)
+        for index, topic_tuple in enumerate(topic_distribution):
+            location_index, value = topic_tuple
+            if index < 5 or value > threshold:
                 topic_set.append(location_map[location_index])
 
         location_collection.update(
