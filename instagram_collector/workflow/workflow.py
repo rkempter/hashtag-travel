@@ -62,14 +62,19 @@ def execute_workflow(topic_nbr):
     write_cluster_mongodb(conn, mongo_db.location_collection)
 
     logging.getLogger(__name__).info("Generate training corpus")
+
     filter_words = [
         'follow', 'like', 'for', 'gram',
         'tweet', 'insta', 'igers', 'ig_', 'ootd', 'oftheday',
-        'vsco', 'onesia', 'girl', 'blackandwhite', 'monochrome'
+        'vsco', 'onesia', 'girl', 'blackandwhite', 'monochrome',
+        'igaddict', 'throwback'
     ]
+
     stop_words = [
         'paris', 'love', 'france',
-        'europe', 'travel', 'onedirection'
+        'europe', 'travel', 'onedirection', 'clouds',
+        'amazing', 'black', 'white', 'niallhoran', 'harrystyles',
+        'awesome'
     ]
 
     training_documents = clean_tags(conn,
@@ -95,5 +100,5 @@ def execute_workflow(topic_nbr):
     write_btm_cluster_vector(mongo_db.location_collection, store_path, doc2cluster_map, topic_nbr=topic_nbr)
 
     # Generate sets
-    get_sets(mongo_db.topic_collection, mongo_db.location_collection, 0.2, topic_nbr)
+    get_sets(mongo_db.topic_collection, mongo_db.location_collection, 0., topic_nbr)
 

@@ -68,6 +68,8 @@ def clean_tags(conn, query, btm=False, stop_words=[], filter_words=[]):
             return False
         if True in map(lambda part: part in check_hashtag, filter_words):
             return False
+        if not check_hashtag.isalpha():
+            return False
 
         return True
 
