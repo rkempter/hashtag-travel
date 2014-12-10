@@ -38,7 +38,8 @@ def update_cluster(conn):
     select_query = """
         SELECT
             media.cluster_id, location.location_name, ST_AsText(ST_centroid(ST_Union(geom))),
-            ST_AsText(ST_Envelope(ST_Union(geom)))
+            ST_AsText(ST_Envelope(ST_Union(geom))), COUNT(DISTINCT(media.user_id)) AS user_count,
+            COUNT(DISTINCT(media.id)) AS instagram_count
         FROM
             media_events AS media, (
             SELECT
@@ -124,6 +125,8 @@ def write_cluster_mongodb(conn, cluster_collection):
             c.name AS cluster_name,
             ST_AsText(c.center) AS center,
             c.radius AS radius,
+            c.instagram_count AS instagram_count,
+            c.user_count AS user_count,
             m.id AS id,
             m.image_url AS image_url,
             m.location_lat AS lat,
@@ -144,7 +147,7 @@ def write_cluster_mongodb(conn, cluster_collection):
 
     df_result = pd.read_sql(media_query, conn)
     grouped_cluster = df_result.groupby([
-        'cluster_id', 'cluster_name', 'center', 'radius'
+        'cluster_id', 'cluster_name', 'center', 'radius', 'user_count', 'instagram_count'
     ])
 
     clusters = []
@@ -153,7 +156,7 @@ def write_cluster_mongodb(conn, cluster_collection):
                                 client_secret=FOURSQUARE_CLIENT_SECRET)
 
     for name, group in grouped_cluster:
-        cluster_id, cluster_name, center, radius = name
+        cluster_id, cluster_name, center, radius, user_count, instagram_count = name
         center = loads(center)
         group_values = group[['id', 'image_url', 'lat', 'lng']].values
         cluster_data = {}
@@ -170,6 +173,8 @@ def write_cluster_mongodb(conn, cluster_collection):
 
         cluster_data.update({
             "_id": cluster_id,
+            "instagram_count": instagram_count,
+            "user_count": user_count,
             "radius": radius,
             "media": [{"id": media[0],
                        "image_url": media[1]} for media in group_values]
