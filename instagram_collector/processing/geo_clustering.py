@@ -20,27 +20,17 @@ def get_points(conn, shape_string):
     """
     cur = conn.cursor()
     cur.execute("""
-        WITH sample AS (
-            SELECT
-                id,
-                location_lng,
-                location_lat,
-                geom,
-                ROW_NUMBER() OVER(PARTITION BY user_id ORDER BY random()) AS rk
-            FROM media_events
-            WHERE
-                ST_Contains(
-                    ST_GeomFromText('Polygon((%s))', 4326),
-                    geom)
-                )
         SELECT
-            s.id, s.location_lng, s.location_lat
+            id, location_lng, location_lat
         FROM
-            sample s
+            media_events
         WHERE
-            s.rk = 1;
+            ST_Contains(
+                ST_GeomFromText('Polygon((%s))', 4326),
+                geom)
+            );
     """ % shape_string)
-    conn.commit()
+
     return cur.fetchall()
 
 def compute_grid(start_pt, end_pt, step_x_count=config.SIZE_X, step_y_count=config.SIZE_Y):
@@ -198,7 +188,7 @@ def post_processing_user_limit(conn, min_user_count):
             SELECT cluster_id
             FROM media_events
             GROUP BY cluster_id
-            HAVING COUNT(user_id) < %s);"""
+            HAVING COUNT(DISTINCT user_id) < %s);"""
 
     cursor = conn.cursor()
     try:
