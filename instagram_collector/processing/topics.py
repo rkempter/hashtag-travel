@@ -103,19 +103,19 @@ def generate_btm_topics(documents, store_path, topic_collection, cluster_collect
             doc2cluster.append(document["cluster_id"])
 
     # Learn paramters p(z) and p(z|w)
-#    cmd = "%s est %d %d %f %f %d %d %s %s" % (BTM_CALL, nbr_topics, len(dictionary), alpha,
-#                                             beta, niter, save_step, input_path, store_path)
-#    return_code = subprocess.call(cmd.split())
-#
-#    if return_code:
-#        raise ValueError("Wrong return code while estimating parameters")
-#
-#    # Infer p(z|d)
-#    cmd = "%s inf lda %d %s %s" % (BTM_CALL, nbr_topics, input_path, store_path)
-#    return_code = subprocess.call(cmd.split())
-#
-#    if return_code:
-#        raise ValueError("Wrong return code received while infering p(z|d)")
+    cmd = "%s est %d %d %f %f %d %d %s %s" % (BTM_CALL, nbr_topics, len(dictionary), alpha,
+                                             beta, niter, save_step, input_path, store_path)
+    return_code = subprocess.call(cmd.split())
+
+    if return_code:
+        raise ValueError("Wrong return code while estimating parameters")
+
+    # Infer p(z|d)
+    cmd = "%s inf lda %d %s %s" % (BTM_CALL, nbr_topics, input_path, store_path)
+    return_code = subprocess.call(cmd.split())
+
+    if return_code:
+        raise ValueError("Wrong return code received while infering p(z|d)")
 
     return doc2cluster
 

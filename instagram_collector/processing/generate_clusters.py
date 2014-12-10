@@ -158,16 +158,12 @@ def write_cluster_mongodb(conn, cluster_collection):
         group_values = group[['id', 'image_url', 'lat', 'lng']].values
         cluster_data = {}
 
-        try:
-            data = retrieve_foursquare_data(foursquare_api, cluster_name, center.y, center.x)
-            cluster_data.update(data)
-        except Exception as e:
-            print e
-            print "something did not work"
+        data = retrieve_foursquare_data(foursquare_api, cluster_name, center.y, center.x)
 
-        if not cluster_data:
-            cluster_data.update(dict(name=cluster_name, coordinates=[center.y, center.x]))
-
+        if not data:
+            data = dict(name=cluster_name, coordinates=[center.y, center.x])
+        
+        cluster_data.update(data)
         cluster_data.update({
             "_id": cluster_id,
             "radius": radius,

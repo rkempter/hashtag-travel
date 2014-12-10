@@ -35,12 +35,13 @@ def map_venue(data):
     def _get_photo(photos):
         if photos:
             groups = photos['groups']
+            if not groups:
+              return None
             for group in groups:
                 if group['type'] != 'venue':
                     continue
 
                 items = group['items']
-
                 return "%s/width720/%s" % (items[0]['prefix'], items[0]['suffix'])
 
         return None
@@ -55,7 +56,7 @@ def map_venue(data):
     venue['fq_tags'] = to_unicode_or_bust(",".join(data['tags']))
     venue['price'] = _get_price_tier(data['attributes'])
 
-    if hasattr('photos', data):
+    if hasattr(data, 'photos'):
         photo_url = _get_photo(data['photos'])
         if photo_url:
             venue['photo'] = photo_url
@@ -71,7 +72,7 @@ def retrieve_foursquare_data(foursquare_api, query, lat, lng):
         'radius': FOURSQUARE_RADIUS}
     )
 
-    if data['venues']:
+    if data and data['venues']:
         venue = foursquare_api.venues(data['venues'][0]['id'])
         filtered_data = map_venue(venue['venue'])
 
