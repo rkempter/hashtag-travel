@@ -50,7 +50,7 @@ def map_venue(data):
     venue['id'] = data['id']
     venue['name'] = to_unicode_or_bust(data['name'])
     venue['address'] = to_unicode_or_bust(",".join(data['location']['formattedAddress']))
-    venue['coordinates'] = [data['location']['lat'], data['location']['lng']]
+    venue['coordinates'] = [data['location']['lng'], data['location']['lat']]
     venue['category_name'] = to_unicode_or_bust(_get_category(data['categories']))
     venue['url'] = data['canonicalUrl']
     venue['fq_tags'] = to_unicode_or_bust(",".join(data['tags']))
