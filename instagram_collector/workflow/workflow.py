@@ -68,7 +68,7 @@ def execute_workflow(topic_nbr):
     logging.getLogger(__name__).info("Do BTM")
     doc2cluster_map = generate_btm_topics(training_documents, store_path,
                                           mongo_db.topic_collection, mongo_db.location_collection,
-                                          1, 0.01, 300, 101, topic_nbr)
+                                          1, 0.01, 400, 101, topic_nbr)
 
 
     # Write the topics to mongo db
@@ -81,3 +81,4 @@ def execute_workflow(topic_nbr):
 
     # Generate sets
     get_sets(mongo_db.topic_collection, mongo_db.location_collection, 0.2, topic_nbr)
+
