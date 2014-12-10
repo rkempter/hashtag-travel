@@ -57,7 +57,7 @@ def execute_workflow(topic_nbr):
     logging.getLogger(__name__).info("Do BTM")
     doc2cluster_map = generate_btm_topics(training_documents, store_path,
                                           mongo_db.topic_collection, mongo_db.location_collection,
-                                          1, 0.01, 300, 101, topic_nbr)
+                                          1, 0.01, 400, 101, topic_nbr)
 
 
     # Write the topics to mongo db
@@ -70,7 +70,7 @@ def execute_workflow(topic_nbr):
 
     # Get features for each location
     logging.getLogger(__name__).info("Generate the feature space for clustering")
-    features, id_map = get_feature_matrix(mongo_db.location_collection)
+    features, id_map = get_feature_matrix(mongo_db.location_collection, topic_nbr)
 
     # Compute the sets
     logging.getLogger(__name__).info("Cluster using kmeans")
