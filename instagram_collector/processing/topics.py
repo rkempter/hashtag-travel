@@ -28,7 +28,7 @@ logging.basicConfig(
 )
 
 
-def clean_tags(conn, query, btm=False, stop_words=[]):
+def clean_tags(conn, query, btm=False, stop_words=[], filter_words=[]):
     """
     Loads the hashtags from database and cleans them. Tags that appear only once in the corpus
     are removed. Returns the filtered documents
@@ -57,12 +57,25 @@ def clean_tags(conn, query, btm=False, stop_words=[]):
     documents = []
     cluster_id = []
 
+    def _filter_hashtag(check_hashtag):
+        if check_hashtag in filtered_hashtag_all:
+            return False
+        if check_hashtag == '':
+            return False
+        if check_hashtag in stop_words:
+            return False
+        if len(check_hashtag) <= 3:
+            return False
+        if True in map(lambda part: part in check_hashtag, filter_words):
+            return False
+
+        return True
+
     for index, doc in enumerate(docs):
         new_doc = [
             hashtag.lower()
             for hashtag in doc
-            if hashtag not in filtered_hashtag_all and hashtag != '' and
-            hashtag not in stop_words and len(hashtag) > 3
+            if _filter_hashtag(hashtag)
         ]
         if new_doc and len(new_doc) >= 2:
             documents.append(new_doc)

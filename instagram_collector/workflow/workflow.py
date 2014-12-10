@@ -62,7 +62,22 @@ def execute_workflow(topic_nbr):
     write_cluster_mongodb(conn, mongo_db.location_collection)
 
     logging.getLogger(__name__).info("Generate training corpus")
-    training_documents = clean_tags(conn, start_query, btm=True, stop_words=['paris', 'love', 'france'])
+    filter_words = [
+        'follow', 'like', 'for', 'gram',
+        'tweet', 'insta', 'igers', 'ig_', 'ootd', 'oftheday',
+        'vsco', 'onesia', 'girl', 'blackandwhite', 'monochrome'
+    ]
+    stop_words = [
+        'paris', 'love', 'france',
+        'europe', 'travel', 'onedirection'
+    ]
+
+    training_documents = clean_tags(conn,
+                                    start_query,
+                                    btm=True,
+                                    stop_words=stop_words,
+                                    filter_words=filter_words
+    )
 
     # Generate the BTM topics
     logging.getLogger(__name__).info("Do BTM")
