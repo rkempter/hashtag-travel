@@ -42,16 +42,16 @@ def execute_workflow(topic_nbr):
 
     # Remove all cluster_ids
     logging.getLogger(__name__).info("Preprocessing")
-    pre_processing(conn)
+#    pre_processing(conn)
 
 
     # Cluster the instagrams using DBSCAN
     logging.getLogger(__name__).info("Start DBSCAN")
-    geo_clustering(conn)
+#    geo_clustering(conn)
 
     # Do post processing of the clusters based on user limits
     logging.getLogger(__name__).info("Post processing of geo clusters")
-    post_processing_user_limit(conn, 20)
+#    post_processing_user_limit(conn, 20)
 
     # Update the cluster database
     logging.getLogger(__name__).info("Update of the clusters in the database")
