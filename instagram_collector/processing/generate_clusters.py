@@ -172,6 +172,7 @@ def write_cluster_mongodb(conn, cluster_collection):
             "instagram_count": instagram_count,
             "user_count": user_count,
             "radius": radius,
+            "topics": [],
             "media": [{"id": media[0],
                        "image_url": media[1]} for media in group_values]
         })

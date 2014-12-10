@@ -43,6 +43,15 @@ def get_sets(topic_collection, location_collection, threshold, topic_nbr=TOPIC_N
             if value > threshold:
                 topic_set.append(location_map[location_index])
 
+        location_collection.update(
+            {"_id": { "$in": topic_set}},
+            {
+                "$push": {
+                    "topics": topic_nbr
+                }
+            }
+        )
+
         topic_collection.update(
             {"_id": topic_nbr},
             {

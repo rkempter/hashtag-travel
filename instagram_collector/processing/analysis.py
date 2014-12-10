@@ -1,10 +1,49 @@
 __author__ = 'rkempter'
 
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 from operator import itemgetter
+
+
+def compute_accuracy(location_collection, df_users, cluster_column):
+    """
+    Computation of the accuracy of predicting the set of places a person moves around.
+    The max number (> 1) of instagrams that falls into the same cluster is counted for the accuracy
+    :param cluster_collection: MongoDB collection of location clusters
+    :param df_users: Pandas dataframe of users with corresponding cluster_id
+    :return:
+    """
+
+    in_set = 0.0
+    total = 0.0
+
+    user_grouped = df_users.groupby('user_id')
+
+    for user, group in user_grouped:
+        # each cluster is counted only once
+        locations = set(group['cluster_id'].values)
+        location_nbr = len(locations)
+
+        topics = map(lambda location: location[cluster_column],
+                     location_collection.find(
+                         {"_id": {"$in": list(locations)}}, {"_id": 0, cluster_column: 1})
+        )
+        intersection_count = Counter(topic for topic in topics)
+        max_arg = max(intersection_count.iteritems(), key=itemgetter(1))[0]
+
+        if intersection_count[max_arg] > 1:
+            in_set += intersection_count[max_arg]
+
+        total += location_nbr
+
+    logging.getLogger(__name__).info("Accuracy is %f" % (in_set / total))
+
+    return in_set / total
+
 
 def get_centroid_stats(locations):
     """
