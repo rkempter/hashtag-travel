@@ -20,14 +20,25 @@ def get_points(conn, shape_string):
     """
     cur = conn.cursor()
     cur.execute("""
+        WITH sample AS (
+            SELECT
+                id,
+                location_lng,
+                location_lat,
+                geom,
+                ROW_NUMBER() OVER(PARTITION BY user_id ORDER BY random()) AS rk
+            FROM media_events
+            WHERE
+                ST_Contains(
+                    ST_GeomFromText('Polygon((%s))', 4326),
+                    geom)
+                )
         SELECT
-            id, location_lng, location_lat
+            s.id, s.location_lng, s.location_lat
         FROM
-            media_events
+            sample s
         WHERE
-            ST_Contains(
-                ST_GeomFromText('Polygon((%s))', 4326),
-                geom);
+            s.rk = 1;
     """ % shape_string)
     conn.commit()
     return cur.fetchall()
