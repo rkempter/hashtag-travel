@@ -11,7 +11,7 @@ from instagram_collector.collector import connect_postgres_db
 from instagram_collector.processing.venue import retrieve_foursquare_data
 from pymongo import MongoClient
 from shapely.wkt import dumps, loads
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, LineString
 
 def great_circle_distance(pnt1, pnt2, radius=6371000):
     """ Similar to great_circle_distance(), but working on list of pnt2 and returning minimum. """
@@ -93,6 +93,8 @@ def update_cluster(conn):
         """
         shape = loads(bounding_box)
         if isinstance(shape, Point):
+            return 0.0
+        if isinstance(shape, LineString):
             return 0.0
         else:
             points = [(center.x, shape.exterior.bounds[1]),
