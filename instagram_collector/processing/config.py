@@ -27,3 +27,6 @@ EPS = 12
 # DBSCAN MIN PTS Parameter
 MIN_PTS = 40
 
+
+SET_SIZE = 5
+
