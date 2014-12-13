@@ -50,7 +50,7 @@ def get_sets(set_collection, location_collection, topic_count=TOPIC_NBR):
             (val, location_map[key][0], location_map[key][1])
             for key, val in enumerate(topic_distribution)
         ]
-        topic_distribution = sorted(topic_distribution, key=itemgetter(1), reverse=True)
+        topic_distribution = sorted(topic_distribution, key=itemgetter(0), reverse=True)
         best_set = compute_best_set(topic_distribution)
 
         insert_sets.append({

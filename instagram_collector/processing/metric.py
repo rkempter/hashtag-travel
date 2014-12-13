@@ -88,7 +88,6 @@ def compute_best_set(locations, set_size=SET_SIZE):
     :param sets: [(value, category_id)]
     :return:
     """
-
     location_index = 5
     lambda_topic, lambda_entropy = estimate_constants(
         np.sum(
@@ -127,9 +126,11 @@ def compute_best_set(locations, set_size=SET_SIZE):
             if result > best_result:
                 best_possibility = possibilty
                 best_result = result
-                topic_sets.append(new_topic_set)
+            
+            topic_sets.append(new_topic_set)
 
         current_topic_set = topic_sets[best_possibility]
+        categories = generate_category_set(current_topic_set, locations)
         if best_result > best_metric_value:
             best_set = current_topic_set
             best_metric_value = best_result
