@@ -1,10 +1,10 @@
 """
-Compute the best set using a metric
+Compute the best set using a entropy of categories as metric
 """
 
 import numpy as np
 
-from .config import SET_SIZE
+from instagram_collector.processing.config import SET_SIZE
 
 from collections import defaultdict
 from scipy.stats import entropy
@@ -33,8 +33,9 @@ def estimate_constants(max_topic_val, set_size, ratio=0.5):
     :param ratio:
     :return:
     """
-    max_entropy = entropy(np.array([1.0/set_size])*set_size)
-    reg_topic = 1.0 / (ratio + 1) * 1.0 / max_topic_val
+    probability = 1.0 / set_size
+    max_entropy = entropy(np.array([probability] * set_size))
+    reg_topic = 1.0 / (ratio + 1) * 1.0 / np.sum(max_topic_val)
     reg_entropy = ratio / (ratio + 1) * 1.0 / max_entropy
 
     return reg_topic, reg_entropy
@@ -92,7 +93,7 @@ def compute_best_set(locations, set_size=SET_SIZE):
     lambda_topic, lambda_entropy = estimate_constants(
         np.sum(
             map(lambda location: location[0], locations[:5])
-        )
+        ), 5
     )
     current_topic_set = range(0, 5)
     categories = generate_category_set(current_topic_set, locations)
@@ -101,7 +102,7 @@ def compute_best_set(locations, set_size=SET_SIZE):
     best_metric_value = compute_metric(
         lambda_topic,
         lambda_entropy,
-        np.array(categories.keys(), dtype=float),
+        np.array(categories.values(), dtype=float),
         get_topic_scores(current_topic_set, locations)
     )
 
@@ -114,22 +115,24 @@ def compute_best_set(locations, set_size=SET_SIZE):
         topic_sets = []
         for possibilty, index in enumerate(possible_replacements):
             new_topic_set = current_topic_set[:]
-            new_topic_set[index] = locations
+            new_topic_set[index] = location_index
+            new_topic_set.sort()
             new_category_set = generate_category_set(new_topic_set, locations)
             result = compute_metric(
                 lambda_topic,
                 lambda_entropy,
-                new_category_set,
-                get_topic_scores(new_topic_set)
+                np.array(new_category_set.values(), dtype=float),
+                get_topic_scores(new_topic_set, locations)
             )
             if result > best_result:
                 best_possibility = possibilty
                 best_result = result
-                topic_sets.append(new_category_set)
+                topic_sets.append(new_topic_set)
 
         current_topic_set = topic_sets[best_possibility]
         if best_result > best_metric_value:
-            best_set = current_topic_set[:]
+            best_set = current_topic_set
+            best_metric_value = best_result
 
         location_index += 1
 
