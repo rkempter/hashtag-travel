@@ -4,7 +4,7 @@ of the configuration parameters
 """
 
 # The number of topics (defines also the number of features for k-means clustering
-TOPIC_NBR= 100
+TOPIC_NBR= 80
 
 BTM_CALL = "/home/rkempter/btm-v0.3/batch/btm"
 
@@ -22,8 +22,8 @@ SIZE_X = 200
 SIZE_Y = 200
 
 # DBSCAN EPS Parameter (diameter around a point)
-EPS = 15
+EPS = 12
 
 # DBSCAN MIN PTS Parameter
-MIN_PTS = 20
+MIN_PTS = 40
 
