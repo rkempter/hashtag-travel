@@ -22,11 +22,6 @@ from pymongo import MongoClient
 
 from .config import TOPIC_NBR, BTM_CALL
 
-logging.basicConfig(
-    filename='topic_logs.log',level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
 
 def clean_tags(conn, query, btm=False, stop_words=[], filter_words=[]):
     """
@@ -105,7 +100,7 @@ def generate_btm_topics(documents, store_path, topic_collection, cluster_collect
     :return:
     """
     # First we need to create the dictionary
-
+    logging.info("Generating the topics using btm")
     dictionary = corpora.Dictionary(map(lambda x: x['tokens'], documents))
     dictionary.save(os.path.join(store_path, "dictionary.dict"))
     dictionary = dictionary.token2id
@@ -144,6 +139,7 @@ def write_mongo_btm_topics(topic_collection, store_path, threshold=0.01, topic_n
     :param topic_number:
     :return:
     """
+    logging.info("Writing the topics out to db")
     topics = []
     dictionary = load_dictionary(store_path)
     dictionary = {val:key for key,val in dictionary.token2id.items()}
@@ -174,6 +170,7 @@ def write_btm_cluster_vector(cluster_collection, store_path, doc2cluster_map, to
     :param topic_nbr:
     :return:
     """
+    logging.info("Generate the distribution vectors for each location")
     clusters = {}
     document_id = 0
     with open(os.path.join(store_path, "pz_d.k%d" % topic_nbr)) as document_collection:

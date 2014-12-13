@@ -2,7 +2,7 @@
 This module handles the processing of clusters
 """
 import foursquare as fq
-import json
+import logging
 import numpy as np
 import pandas as pd
 
@@ -32,7 +32,7 @@ def update_cluster(conn):
     :param conn:
     :return:
     """
-
+    logging.info("Generate location clusters based on database")
     remove_query = """DELETE FROM cluster;"""
 
     select_query = """
@@ -119,6 +119,7 @@ def write_cluster_mongodb(conn, cluster_collection):
     :param conn: Connection to a database
     :return: JSON of all clusters and their corresponding instagrams
     """
+    logging.info("Write locations to mongo database")
     media_query = """
         SELECT
             m.cluster_id AS cluster_id,

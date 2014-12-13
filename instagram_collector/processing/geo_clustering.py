@@ -37,6 +37,7 @@ def compute_grid(start_pt, end_pt, step_x_count=config.SIZE_X, step_y_count=conf
     :param step_x_count - how many cells on x scale
     :param step_y_count - how many cells on y scale
     """
+    logging.info("Generating the grid")
     x_coordinates = np.linspace(start_pt[0],end_pt[0], step_x_count + 1)
     y_coordinates = np.linspace(start_pt[1], end_pt[1], step_y_count + 1)
 
@@ -134,6 +135,7 @@ def geo_clustering(conn, size_x=config.SIZE_X, size_y=config.SIZE_Y,
 
     for index_x in range(0, size_x):
         for index_y in range(0, size_y):
+            logging.info("Working on cell %d/%d. Total size is %d/%d" % (index_x, index_y, size_x, size_y))
             shape_string = generate_shapestring(polygons, index_x, index_y)
             points = get_points(conn, shape_string)
             if len(points) > min_pts:
@@ -160,7 +162,7 @@ def pre_processing(conn):
     :param conn:
     :return:
     """
-
+    logging.info("Preprocessing of instagram data")
     query = """UPDATE media_events SET cluster_id = NULL;"""
     cursor = conn.cursor()
     cursor.execute(query)
@@ -176,7 +178,7 @@ def post_processing_user_limit(conn, min_user_count):
     :param min_user:
     :return:
     """
-
+    logging.info("Post processing of geo clusters")
     query = """
         UPDATE media_events
         SET cluster_id = NULL

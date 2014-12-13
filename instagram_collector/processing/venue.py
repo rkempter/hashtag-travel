@@ -73,9 +73,10 @@ def retrieve_foursquare_data(foursquare_api, query, lat, lng):
     )
 
     if data and data['venues']:
+        logging.info("Found a venue on Foursquare for place %s" % (query,))
         venue = foursquare_api.venues(data['venues'][0]['id'])
         filtered_data = map_venue(venue['venue'])
 
         return filtered_data
-
+    logging.info("Venue not found for place %s" % query)
     return None
