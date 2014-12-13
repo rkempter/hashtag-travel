@@ -136,4 +136,5 @@ def compute_best_set(locations, set_size=SET_SIZE):
 
         location_index += 1
 
-    return best_set
+    result_set = map(lambda index: locations[index][2], best_set)
+    return result_set

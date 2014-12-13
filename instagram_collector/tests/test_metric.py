@@ -10,16 +10,16 @@ class TestMetric(TestCase):
 
     def setUp(self):
         self.locations = [
-            (0.9, 1),  # 0
-            (0.8, 1),  # 1
-            (0.7, 2),  # 2
-            (0.6, 2),  # 3
-            (0.5, 1),  # 4
-            (0.5, 4),  # 5
-            (0.4, 5),  # 6
-            (0.3, 1),  # 7
-            (0.2, 5),  # 8
-            (0.1, 3)   # 9
+            (0.9, 1, 0),  # 0
+            (0.8, 1, 1),  # 1
+            (0.7, 2, 2),  # 2
+            (0.6, 2, 3),  # 3
+            (0.5, 1, 4),  # 4
+            (0.5, 4, 5),  # 5
+            (0.4, 5, 6),  # 6
+            (0.3, 1, 7),  # 7
+            (0.2, 5, 8),  # 8
+            (0.1, 3, 9)   # 9
         ]
 
     def test_generate_category_set(self):
@@ -59,15 +59,7 @@ class TestMetric(TestCase):
         self.assertListEqual([0.9, 0.8, 0.7, 0.6, 0.5], result)
 
     def test_compute_best_set(self):
-        expected_result = 0.904481220828
-
-        current_set = [0,1,2,3,4]
-        lambda_topic, lambda_entropy = estimate_constants(get_topic_scores(current_set, self.locations), 5)
+        expected_result = [0, 1, 2, 5, 6]
 
         result_set = compute_best_set(self.locations, 5)
-        result_category = generate_category_set(result_set, self.locations)
-        result = compute_metric(lambda_topic, lambda_entropy,
-                                np.array(result_category.values(), dtype=float),
-                                get_topic_scores(result_set, self.locations))
-
-        self.assertAlmostEqual(result, expected_result)
+        self.assertListEqual(result_set, expected_result)
