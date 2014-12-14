@@ -42,7 +42,7 @@ def map_venue(data):
                     continue
 
                 items = group['items']
-                return "%s/width720/%s" % (items[0]['prefix'], items[0]['suffix'])
+                return "%swidth720%s" % (items[0]['prefix'], items[0]['suffix'])
 
         return None
 
@@ -56,7 +56,8 @@ def map_venue(data):
     venue['fq_tags'] = to_unicode_or_bust(",".join(data['tags']))
     venue['price'] = _get_price_tier(data['attributes'])
 
-    if hasattr(data, 'photos'):
+    if 'photos' in data:
+        print "photos here"
         photo_url = _get_photo(data['photos'])
         if photo_url:
             venue['photo'] = photo_url

@@ -45,9 +45,12 @@ def clean_tags(conn, query, btm=False, stop_words=[], filter_words=[]):
 
     # Count all hashtags with
     hashtags_count = Counter(tag for tag in hashtags_flat)
-
+    top_limit = sorted(hashtags_count.values(), reverse=True)[100]
     # Filter out hashtags that appear only once
-    filtered_hashtag_all = set([hashtag for hashtag, count in hashtags_count.items() if count == 1])
+    filtered_hashtag_all = set([
+        hashtag for hashtag, count in hashtags_count.items()
+        if count < 10 or count > top_limit
+    ])
 
     documents = []
     cluster_id = []
@@ -85,6 +88,8 @@ def clean_tags(conn, query, btm=False, stop_words=[], filter_words=[]):
     if btm:
         pairs = zip(cluster_id, documents)
         documents = [{"cluster_id": cid, "tokens": hashtags} for cid, hashtags in pairs]
+
+    logging.info("Number of documents: %d" % len(documents))
     return documents
 
 

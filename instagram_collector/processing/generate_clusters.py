@@ -167,7 +167,9 @@ def write_cluster_mongodb(conn, cluster_collection):
         data = retrieve_foursquare_data(foursquare_api, cluster_name, center.y, center.x)
 
         if not data:
-            data = dict(name=cluster_name, coordinates=[center.y, center.x])
+            continue;
+            # Trying only with locations that we were able to correlate with foursquare
+            # data = dict(name=cluster_name, coordinates=[center.y, center.x])
         
         cluster_data.update(data)
         cluster_data.update({
