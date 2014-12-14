@@ -51,12 +51,12 @@ def get_sets(set_collection, topic_collection, location_collection, topic_count=
             for key, val in enumerate(topic_distribution)
         ]
         topic_distribution = sorted(topic_distribution, key=itemgetter(0), reverse=True)
-        names = topic_collection.find({"_id": topic_nbr}, {"names": 1})['names']
+        names = topic_collection.find_one({"_id": topic_nbr}, {"names": 1})
         best_set = compute_best_set(topic_distribution)
 
         insert_sets.append({
             "_id": topic_nbr,
-            "names": names,
+            "names": names['names'],
             "locations": best_set
         })
 
