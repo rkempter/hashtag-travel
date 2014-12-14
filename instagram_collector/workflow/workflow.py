@@ -3,9 +3,10 @@ __author__ = 'rkempter'
 import logging
 
 from instagram_collector.collector import connect_postgres_db
-from instagram_collector.processing.generate_clusters import update_cluster, write_cluster_mongodb
+from instagram_collector.processing.generate_clusters import (update_cluster,
+                                                              write_cluster_mongodb)
 from instagram_collector.processing.topic_sets import get_sets
-from instagram_collector.processing.geo_clustering import (geo_clustering,
+from instagram_collector.processing.geo_clustering import (geo_clustering, remove_clusters,
                                                            post_processing_user_limit,
                                                            pre_processing)
 from instagram_collector.processing.topics import (clean_tags, generate_btm_topics,
@@ -36,6 +37,15 @@ def execute_workflow(topic_nbr):
         WHERE
             s.rk = 1;"""
 
+    filter_cat_list = [
+        'Advertising Agency',
+        'General College & University',
+        'School', 'Office', 'Residential Building (Apartment / Condo)',
+        'TV Station', 'Home (private)', 'Assisted Living', 'IT Services'
+        'Radio Station', 'Tech Startup',
+
+    ]
+
     mongo_db.location_collection.remove({})
     mongo_db.set_collection.remove({})
     mongo_db.topic_collection.remove({})
@@ -55,7 +65,10 @@ def execute_workflow(topic_nbr):
 
     # Update the cluster database
     logging.getLogger(__name__).info("Update of the clusters in the database")
-    update_cluster(conn)
+    remove_list = update_cluster(conn, filter_cat_list)
+
+    logging.getLogger(__name__).info("Remove some of the clusters")
+    remove_clusters(conn, remove_list)
 
     # Write to mongo db
     logging.getLogger(__name__).info("Write locations to mongo db")

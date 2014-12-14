@@ -169,6 +169,28 @@ def pre_processing(conn):
     conn.commit()
 
 
+def remove_clusters(conn, remove_list):
+    """
+    Remove clusters in remove_list
+    :param conn:
+    :param remove_list:
+    :return:
+    """
+    logging.info("Post processing of geo clusters")
+    query = """
+        UPDATE media_events
+        SET cluster_id = NULL
+        WHERE cluster_id IN (%s);"""
+
+    remove_list_string = ",".join(map(lambda x: str(x), remove_list))
+    cursor = conn.cursor()
+    try:
+        cursor.execute(query, (remove_list_string,))
+        conn.commit()
+    except psycopg2.Error as e:
+        logging.getLogger(__name__).error(e)
+
+
 def post_processing_user_limit(conn, min_user_count):
     """
     Post processing of clusters. Clusters need to fullfill some quality criterion

@@ -114,7 +114,7 @@ def update_cluster(conn):
     conn.commit()
 
 
-def write_cluster_mongodb(conn, cluster_collection):
+def write_cluster_mongodb(conn, cluster_collection, filter_category_list):
     """
     Generates a json of the clusters with information about the contained instagrams
 
@@ -157,7 +157,7 @@ def write_cluster_mongodb(conn, cluster_collection):
 
     foursquare_api = fq.Foursquare(client_id=FOURSQUARE_CLIENT_ID,
                                 client_secret=FOURSQUARE_CLIENT_SECRET)
-
+    remove_list = []
     for name, group in grouped_cluster:
         cluster_id, cluster_name, center, radius, user_count, instagram_count = name
         center = loads(center)
@@ -166,11 +166,12 @@ def write_cluster_mongodb(conn, cluster_collection):
 
         data = retrieve_foursquare_data(foursquare_api, cluster_name, center.y, center.x)
 
-        if not data:
+        if not data or data['category_name'] in filter_category_list:
+            remove_list.append(cluster_id)
             continue;
             # Trying only with locations that we were able to correlate with foursquare
             # data = dict(name=cluster_name, coordinates=[center.y, center.x])
-        
+
         cluster_data.update(data)
         cluster_data.update({
             "_id": cluster_id,
@@ -183,7 +184,9 @@ def write_cluster_mongodb(conn, cluster_collection):
         })
         clusters.append(cluster_data)
 
-    return cluster_collection.insert(clusters)
+    cluster_collection.insert(clusters)
+
+    return remove_list
 
 
 if __name__ == '__main__':
