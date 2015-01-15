@@ -2,15 +2,14 @@
 Module that implements different sets to compute accuracy
 """
 import logging
-import numpy as np
-import pandas as pd
-
 from collections import Counter
-from instagram_collector.collector import connect_postgres_db
 from operator import itemgetter
+
+import pandas as pd
 from pymongo import MongoClient
 from pymongo.bulk import BulkWriteError
 
+from instagram_collector.analytics.collector import connect_postgres_db
 from .config import LOCATION_CLUSTER_NBR, TOPIC_NBR
 
 

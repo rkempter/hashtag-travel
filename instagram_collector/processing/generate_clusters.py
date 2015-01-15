@@ -1,17 +1,19 @@
 """
 This module handles the processing of clusters
 """
-import foursquare as fq
 import logging
+
+import foursquare as fq
 import numpy as np
 import pandas as pd
-
-from instagram_collector.config import (FOURSQUARE_CLIENT_ID, FOURSQUARE_CLIENT_SECRET)
-from instagram_collector.collector import connect_postgres_db
-from instagram_collector.processing.venue import retrieve_foursquare_data
 from pymongo import MongoClient
 from shapely.wkt import dumps, loads
-from shapely.geometry import Point, Polygon, LineString
+from shapely.geometry import Point, LineString
+
+from instagram_collector.config import (FOURSQUARE_CLIENT_ID, FOURSQUARE_CLIENT_SECRET)
+from instagram_collector.analytics.collector import connect_postgres_db
+from instagram_collector.processing.venue import retrieve_foursquare_data
+
 
 def great_circle_distance(pnt1, pnt2, radius=6371000):
     """ Similar to great_circle_distance(), but working on list of pnt2 and returning minimum. """

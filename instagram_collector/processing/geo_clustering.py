@@ -180,12 +180,11 @@ def remove_clusters(conn, remove_list):
     query = """
         UPDATE media_events
         SET cluster_id = NULL
-        WHERE cluster_id IN (%s);"""
+        WHERE cluster_id IN %s;"""
 
-    remove_list_string = ",".join(map(lambda x: str(x), remove_list))
     cursor = conn.cursor()
     try:
-        cursor.execute(query, (remove_list_string,))
+        cursor.execute(query, (set(remove_list),))
         conn.commit()
     except psycopg2.Error as e:
         logging.getLogger(__name__).error(e)

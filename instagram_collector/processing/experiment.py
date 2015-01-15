@@ -2,17 +2,14 @@
 Module for conducting experiments
 """
 
-import logging
-import numpy as np
-import matplotlib.pyplot as plt
+from pymongo import MongoClient
+from sklearn.cluster import k_means
 
-from instagram_collector.collector import connect_postgres_db
+from instagram_collector.analytics.collector import connect_postgres_db
 from instagram_collector.processing.generate_sets import (generate_connectivity,
     get_agglomerative_clustering, compute_accuracy, generate_user_set,
     write_centroid, get_feature_matrix, kmeans_cluster_locations)
 from instagram_collector.processing.analysis import get_centroid_stats, plot_metrics
-from pymongo import MongoClient
-from sklearn.cluster import k_means
 
 
 def estimate_cluster_nbr(features, range_to_test):
@@ -153,8 +150,7 @@ def do_agglomerative_clustering(conn, mongo_db, features, id_mapping,
 
 
 def btm_topic_modelling(storage_path):
-    from .topics import (clean_tags, generate_btm_topics, write_btm_cluster_vector,
-                         write_mongo_btm_topics)
+    from .topics import (clean_tags, generate_btm_topics, write_btm_cluster_vector)
     start_query = """
         SELECT cluster_id, tags
         FROM media_events

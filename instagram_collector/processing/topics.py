@@ -7,19 +7,19 @@ This modules handles the topic generation and assignes topics to clusters
 
 import json
 import logging
-import numpy as np
 import os
-import pandas as pd
 import subprocess
-
 from collections import defaultdict, Counter
 from decimal import Decimal
-from instagram_collector.collector import connect_postgres_db
-from instagram_collector.helper import to_unicode_or_bust
-from gensim import corpora, models
 from operator import itemgetter
+
+import numpy as np
+import pandas as pd
 from pymongo import MongoClient
 
+from instagram_collector.analytics.collector import connect_postgres_db
+from instagram_collector.analytics.helper import to_unicode_or_bust
+from gensim import corpora, models
 from .config import TOPIC_NBR, BTM_CALL
 
 

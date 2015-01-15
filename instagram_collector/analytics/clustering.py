@@ -42,25 +42,31 @@ def generate_polygon(x_index, y_index, grid):
         (x_index+1
             if x_index+1 < length else x_index,
          y_index+1
-            if y_index + 1 < len(grid) else y_index)
+            if y_index + 1 < len(grid) else y_index),
     ]
-    return cascaded_union([grid[index[0]][index[1]] for index in indexes])
+    polygon = cascaded_union([grid[index[0]][index[1]] for index in indexes])
+    coord_string = ",".join(
+        map(lambda point: "%s %s" % (point[0], point[1]), list(polygon.exterior.coords))
+    )
+    return coord_string
 
 
 def get_points(x_index, y_index, grid):
     query = """
-        SELECT
-            id, name, lat, lng
+        SELECT *
         FROM
-            media
+            media_events
         WHERE
-            ST_Contains(latlon, ST_GeomFromText('POLYGON((%s,%s,%s,%s))')"""
+            ST_Contains(
+                ST_GeomFromText('Polygon((%s))', 4326),
+                geom);
+    """
 
-    point1, point2, point3, point4 = generate_polygon(x_index, y_index)
+    polygon_string = generate_polygon(x_index, y_index, grid)
 
     conn = connect_postgres_db()
     cursor = conn.cursor()
-    cursor.execute(query % (point1, point2, point3, point4))
+    cursor.execute(query % polygon_string)
     result = cursor.fetchall()
     conn.close()
 

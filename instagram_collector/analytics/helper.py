@@ -30,4 +30,12 @@ def great_circle_distance(pnt1, pnt2, radius=6371000):
     dLat = np.radians(pnt2[0]) - np.radians(pnt1[0])   # slice latitude from list of (lat, lon) points
     dLon = np.radians(pnt2[1]) - np.radians(pnt1[1])
     a = np.square(np.sin(dLat / 2.0)) + np.cos(np.radians(pnt1[0])) * np.cos(np.radians(pnt2[0])) * np.square(np.sin(dLon / 2.0))
-    return np.min(2 * np.arcsin(np.minimum(np.sqrt(a), len(a)))) * radius
+    return np.min(2 * np.arcsin(np.sqrt(a))) * radius
+
+def to_unicode_or_bust(obj, encoding='utf-8'):
+    """ Decode to unicode as soon as possible """
+    if isinstance(obj, basestring):
+        if not isinstance(obj, unicode):
+            obj = unicode(obj, encoding)
+
+    return obj

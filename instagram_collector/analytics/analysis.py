@@ -4,22 +4,21 @@ foursquare data set.
 """
 import datetime
 import logging
+from collections import defaultdict
+from operator import itemgetter
 
 import numpy as np
 import networkx as nx
 import matplotlib.collections as col
 import matplotlib.pyplot as plt
 import pandas as pd
-
-from collections import defaultdict
-from operator import itemgetter
-
 from descartes import PolygonPatch
 from mpl_toolkits.basemap import Basemap
 from shapely.geometry import Polygon, MultiPolygon
 
 from instagram_collector.config import MIN_LATITUDE, MIN_LONGITUDE, MAX_LATITUDE, MAX_LONGITUDE
-from instagram_collector.collector import connect_db
+from instagram_collector.analytics.collector import connect_db
+
 
 
 # Configure logging
@@ -263,7 +262,7 @@ def print_nodes(graph, metric_dict, positions, fig_title, cmap):
 
     metric_nodes, metric_colors = _order_nodes(metric_dict)
     positions_corrected = {
-        key:m(val['lng'], val['lat'])
+        key:m(val['lat'], val['lng'])
         for key, val in positions.items()
         if key in graph.nodes()
     }
@@ -295,7 +294,7 @@ def print_graph(graph, positions={}, colors={}, fig_title="", cmap_name="hot", *
         suppress_ticks=True)
 
     # convert lat and lng to map projection
-    positions_corrected = {key:m(val['lng'], val['lat']) for key, val in positions.items()}
+    positions_corrected = {key:m(val['lng'], val['lng']) for key, val in positions.items()}
 
     cmap = plt.get_cmap(cmap_name)
     nx.draw_networkx(

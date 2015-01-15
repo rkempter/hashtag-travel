@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 # For all locations retrieved from Instagram, get detailed venue information.
 
-from collections import defaultdict
-
-import venue as fq
 import logging
+
+import foursquare as fq
 
 from instagram_collector.config import FOURSQUARE_CLIENT_ID,\
                                        FOURSQUARE_CLIENT_SECRET, FOURSQUARE_RADIUS, FOURSQUARE_LIMIT
-from instagram_collector.collector import connect_db
+from instagram_collector.analytics.collector import connect_db
+
 
 # Configure logging
 logging.basicConfig(

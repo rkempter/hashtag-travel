@@ -5,7 +5,7 @@ Augment the clusters with information from foursquare
 import logging
 
 from instagram_collector.config import FOURSQUARE_RADIUS
-from instagram_collector.helper import to_unicode_or_bust
+from instagram_collector.analytics.helper import to_unicode_or_bust
 
 
 def map_venue(data):
